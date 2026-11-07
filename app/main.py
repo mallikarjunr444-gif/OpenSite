@@ -4,6 +4,7 @@ import hmac
 import os
 import uuid
 from datetime import datetime
+from email.utils import parsedate_to_datetime
 
 import pandas as pd
 import streamlit as st
@@ -96,10 +97,32 @@ def all_memories(site_id):
     recorded = []
     for item in extras:
         content = item.get("content", "")
-        if item.get("metadata", {}).get("type") == "Experiment" or "[NEW EXPERIMENT]" in content or "[RANKING UPDATE]" in content or "[ALGORITHM UPDATE]" in content:
-            title = content.split(":", 1)[0].replace("[NEW EXPERIMENT]", "").replace("[RANKING UPDATE]", "").replace("[ALGORITHM UPDATE]", "").strip()
+        metadata = item.get("metadata", {})
+        marker_categories = {
+            "[NEW EXPERIMENT]": "experiment",
+            "[RANKING UPDATE]": "ranking",
+            "[ALGORITHM UPDATE]": "algorithm_update",
+            "[PAGE CHANGE]": "page_change",
+            "[CONTENT PERFORMANCE]": "content_performance",
+        }
+        marker = next((key for key in marker_categories if key in content), "")
+        kind = str(metadata.get("type", "")).lower()
+        if metadata.get("type") in ("Experiment", "AI recommendation", "Recommendation outcome", "Local business location", "Conversion snapshot", "Search update") or marker:
+            category = marker_categories.get(marker, {
+                "algorithm update":"algorithm_update", "ranking change":"ranking", "technical seo":"technical_seo",
+                "page change":"page_change", "content performance":"content_performance", "experiment":"experiment",
+                "ai recommendation":"recommendation", "recommendation outcome":"recommendation_outcome",
+                "local business location":"local_seo", "conversion snapshot":"conversion", "search update":"search_update",
+            }.get(kind, "signal"))
+            title = metadata.get("title") or metadata.get("name") or content.split(":", 1)[0]
+            for prefix in marker_categories:
+                title = title.replace(prefix, "")
+            title = str(title).strip()
             if title not in existing:
-                recorded.append({"date": item.get("timestamp", ""), "category": "experiment", "title": title or "Recorded growth signal", "content": content.split(":", 1)[-1].strip(), "tags": item.get("tags", []), "metadata": item.get("metadata", {}), "source": "memory"})
+                detail = metadata.get("summary") or metadata.get("result") or content.split(":", 1)[-1].strip()
+                if metadata.get("type") == "Search update":
+                    detail = metadata.get("summary", detail)
+                recorded.append({"date": item.get("timestamp", ""), "category": category, "title": title or "Recorded growth signal", "content": detail, "tags": item.get("tags", []), "metadata": metadata, "source": "memory"})
     return seeded + recorded
 
 
@@ -165,7 +188,7 @@ with st.sidebar:
 
 events = all_memories(site_id)
 experiments = [item for item in events if any(word in item.get("category", "") for word in ("experiment", "ab_test", "cro"))]
-updates = [item for item in events if item.get("category") in ("algorithm_update", "technical_seo", "ranking")]
+updates = [item for item in events if item.get("category") in ("algorithm_update", "technical_seo", "ranking", "page_change", "search_update")]
 site_memories = hindsight_mgr.get_bank_memories(site_id)
 
 if page == "Overview":
@@ -234,7 +257,7 @@ if page == "Overview":
     with right:
         st.markdown('<div class="section-title">Add a growth signal</div><div class="subtle">Keep your learning loop current</div>',unsafe_allow_html=True)
         with st.form("quick_capture"):
-            signal_type=st.selectbox("Signal type",["Experiment result","Ranking change","Algorithm update","Content performance"])
+            signal_type=st.selectbox("Signal type",["Experiment result","Ranking change","Page change","Algorithm update","Content performance"])
             signal_title=st.text_input("Title",placeholder="e.g. Product page title test")
             signal_result=st.text_area("What happened?",placeholder="Include the change, timeframe, and measured outcome.",height=90)
             save=st.form_submit_button("Save to OpenSite memory")
@@ -242,7 +265,7 @@ if page == "Overview":
                 if not signal_title.strip() or not signal_result.strip(): st.error("Add a title and an outcome before saving.")
                 else:
                     tag=signal_type.lower().replace(" ","_")
-                    prefix={"Experiment result":"NEW EXPERIMENT","Ranking change":"RANKING UPDATE","Algorithm update":"ALGORITHM UPDATE","Content performance":"CONTENT PERFORMANCE"}[signal_type]
+                    prefix={"Experiment result":"NEW EXPERIMENT","Ranking change":"RANKING UPDATE","Page change":"PAGE CHANGE","Algorithm update":"ALGORITHM UPDATE","Content performance":"CONTENT PERFORMANCE"}[signal_type]
                     hindsight_mgr.retain(site_id,f"[{prefix}] {signal_title.strip()}: {signal_result.strip()}",tags=[tag,"user_recorded"],metadata={"type":signal_type,"title":signal_title.strip()})
                     st.success("Saved. OpenSite will include this signal in future recall.")
                     st.rerun()
@@ -630,21 +653,38 @@ elif page == "Rankings & updates":
         for item in content_events:
             outcome=item.get("metadata",{}).get("outcome") or item.get("metadata",{}).get("impact") or "Outcome captured"
             st.markdown(f'<div class="card" style="margin:9px 0"><div class="eyebrow">{esc(item.get("date","")[:10])} · CONTENT SIGNAL</div><div class="section-title" style="margin-top:7px">{esc(item["title"])}</div><div class="metric-delta" style="margin:8px 0">{esc(outcome)}</div><div class="event-copy">{esc(item["content"][:280])}</div></div>',unsafe_allow_html=True)
-        with st.expander("Record ranking or update"):
+        with st.expander("Record a page, ranking, or algorithm change"):
             with st.form("ranking_record"):
                 title=st.text_input("Keyword, page, or update")
-                kind=st.selectbox("Signal type",["Ranking change","Algorithm update","Technical SEO"])
+                kind=st.selectbox("Signal type",["Page change","Ranking change","Algorithm update","Technical SEO"])
                 detail=st.text_area("Change and impact")
                 submitted=st.form_submit_button("Save signal")
                 if submitted:
                     if not title.strip() or not detail.strip(): st.error("Add a subject and what changed.")
                     else:
-                        prefix="RANKING UPDATE" if kind=="Ranking change" else "ALGORITHM UPDATE"
+                        prefix={"Page change":"PAGE CHANGE","Ranking change":"RANKING UPDATE","Algorithm update":"ALGORITHM UPDATE","Technical SEO":"TECHNICAL SEO"}[kind]
                         hindsight_mgr.retain(site_id,f"[{prefix}] {title.strip()}: {detail.strip()}",tags=[kind.lower().replace(" ","_"),"rankings","user_recorded"],metadata={"type":kind,"title":title.strip()})
                         st.success("Signal saved to site memory."); st.rerun()
     st.markdown('<div class="divider"></div><div class="section-title">Official Google Search updates</div><div class="subtle">Recent posts from Google Search Central. Treat timing as context, not proof of cause.</div>',unsafe_allow_html=True)
     if st.button("Check official update feed"):
-        try: st.session_state["google_search_updates"]=integrations.google_search_updates()
+        try:
+            feed = integrations.google_search_updates()
+            st.session_state["google_search_updates"] = feed
+            known_urls = {item.get("metadata", {}).get("url") for item in hindsight_mgr.get_bank_memories(site_id) if item.get("metadata", {}).get("type") == "Search update"}
+            saved_count = 0
+            for update in feed.get("updates", []):
+                if not update.get("url") or update["url"] in known_urls:
+                    continue
+                try:
+                    published = parsedate_to_datetime(update.get("published", "")).astimezone().isoformat()
+                except (TypeError, ValueError, OverflowError):
+                    published = datetime.now().astimezone().isoformat()
+                summary = update.get("summary", "")[:1500]
+                hindsight_mgr.retain(site_id, f"[SEARCH UPDATE] {update.get('title', 'Search Central update')}: {summary} Link: {update['url']}", timestamp=published, tags=["search_update", "google_search_central"], metadata={"type":"Search update", "title":update.get("title", "Search Central update"), "summary":summary, "url":update["url"], "published":update.get("published", "")})
+                known_urls.add(update["url"])
+                saved_count += 1
+            st.success(f"Loaded {len(feed.get('updates', []))} updates and saved {saved_count} new items to this property's history.")
+            st.rerun()
         except Exception as exc: st.error(f"Could not read official feed: {exc}")
     for update in st.session_state.get("google_search_updates",{}).get("updates",[]):
         st.markdown(f'<div class="card" style="margin:8px 0;padding:14px 17px"><div class="event-meta">{esc(update["published"])}</div><div class="event-title">{esc(update["title"])}</div><div class="event-copy">{esc(update["summary"][:450])}</div><a href="{esc(update["url"])}" target="_blank">Open Google Search Central ↗</a></div>',unsafe_allow_html=True)
