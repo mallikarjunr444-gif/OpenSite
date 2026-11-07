@@ -106,7 +106,7 @@ Cloud Run requires an open billing account even though it has a free usage quota
 
 ## Deploy the interactive app without Firebase billing
 
-The repository is ready for [Streamlit Community Cloud](https://share.streamlit.io/), an open-source-friendly hosting option for Streamlit apps. Sign in with GitHub, create an app, and select:
+The repository is ready for [Streamlit Community Cloud](https://share.streamlit.io/deploy?repository=mallikarjunr444-gif%2FOpenSite&branch=main&mainModule=app%2Fmain.py), a free hosting option for Streamlit apps. Open the prefilled deployment page, sign in with GitHub, confirm the app, and deploy:
 
 - Repository: `mallikarjunr444-gif/OpenSite`
 - Branch: `main`
