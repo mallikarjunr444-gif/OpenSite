@@ -7,6 +7,14 @@
 
 OpenSite is a growth intelligence workspace for marketing teams. It brings search visibility, website health, analytics, content performance, and experiment outcomes into one history, then uses that evidence to help decide what to improve next.
 
+## Screenshots
+
+These are captures of the live Firebase project landing page. The interactive Streamlit dashboard is a separate backend app and is not yet deployed while the Firebase project's billing account remains closed.
+
+![OpenSite landing page on desktop](screenshots/opensite-landing-desktop.png)
+
+![OpenSite landing page on mobile](screenshots/opensite-landing-mobile.png)
+
 ## What OpenSite does
 
 - **Growth overview:** review saved site signals and ask the advisor questions grounded in that history.
