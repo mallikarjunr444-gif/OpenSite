@@ -9,11 +9,13 @@ OpenSite is a growth intelligence workspace for marketing teams. It brings searc
 
 ## Screenshots
 
-These are captures of the live Firebase project landing page. The interactive Streamlit dashboard is a separate backend app and is not yet deployed while the Firebase project's billing account remains closed.
+The landing-page captures show the static site. The dashboard capture is from the working local Streamlit app; it shows demo history until you connect a verified property and data source.
 
 ![OpenSite landing page on desktop](screenshots/opensite-landing-desktop.png)
 
 ![OpenSite landing page on mobile](screenshots/opensite-landing-mobile.png)
+
+![OpenSite interactive dashboard preview](screenshots/opensite-dashboard.png)
 
 ## What OpenSite does
 
@@ -102,9 +104,20 @@ Cloud Run prints the interactive app's service URL when deployment completes. Fi
 
 Cloud Run requires an open billing account even though it has a free usage quota. The only billing account available during setup is closed. Google also rejected enabling Cloud Run, Cloud Build, Artifact Registry, and Secret Manager APIs without an open billing account, so the Python app is not deployed yet. Usage beyond included quotas can be billed. Firebase Hosting currently serves the static landing page; it cannot run this Python app by itself.
 
+## Deploy the interactive app without Firebase billing
+
+The repository is ready for [Streamlit Community Cloud](https://share.streamlit.io/), an open-source-friendly hosting option for Streamlit apps. Sign in with GitHub, create an app, and select:
+
+- Repository: `mallikarjunr444-gif/OpenSite`
+- Branch: `main`
+- Main file: `app/main.py`
+- Python: `3.12`
+
+This one-time deploy must be completed from your Streamlit account. Add API credentials only in Streamlit's Secrets settings. Do not add OAuth tokens, analytics keys, or passwords to GitHub. Community Cloud is suitable for getting the interactive UI online; configure a durable memory provider before relying on it for long-term production history.
+
 ## GitHub Pages project site
 
-The responsive static project page is live on [GitHub Pages](https://mallikarjunr444-gif.github.io/OpenSite/) and [Firebase Hosting](https://opensite-growth-mr444-hosting.web.app). GitHub Actions publishes it from `main`; Firebase deployments use `firebase deploy --only hosting:opensite --project opensite-growth-mr444`. These landing pages are separate from the Streamlit application: they describe OpenSite and link to setup instructions, while interactive dashboards, API connections, and persistent memory need the Python backend deployed on Cloud Run or another server host.
+The responsive project page is live on [GitHub Pages](https://mallikarjunr444-gif.github.io/OpenSite/) and [Firebase Hosting](https://opensite-growth-mr444-hosting.web.app). GitHub Actions publishes it from `main`; Firebase deployments use `firebase deploy --only hosting:opensite --project opensite-growth-mr444`. The static page links to the Streamlit app deployment and displays a dashboard preview; the interactive app runs separately on Streamlit Community Cloud or another server host.
 
 ## Current scope
 
