@@ -75,6 +75,58 @@ Credentials entered in the Streamlit UI remain in that browser session and are n
 
 Local SEO geocoding uses the configurable `OPENSITE_NOMINATIM_URL`. If using the public Nominatim service, every lookup is user-triggered and cached in-process; obey the [Nominatim usage policy](https://operations.osmfoundation.org/policies/nominatim/) (including its maximum of one request per second), provide suitable attribution, and switch to a provider you operate or are authorized to use if your usage grows. OpenStreetMap data is © OpenStreetMap contributors and available under ODbL.
 
+## Multi-Platform & API Connections
+
+OpenSite provides a dual-interface architecture: a rich interactive Streamlit workspace for marketing and growth teams, plus a high-performance FastAPI REST backend for external agent platforms, Band AI Desktop, and webhooks.
+
+### 1. Band AI Desktop Integration
+
+Band AI Desktop can call OpenSite as an autonomous growth copilot:
+
+- **Tools Manifest:** `GET /api/band-ai/manifest`
+- **Tool Execution:** `POST /api/band-ai/invoke`
+  - `opensite_advise`: Ask for recommendations citing historical site memory
+  - `opensite_recall`: Retrieve historical experiments and ranking patterns with TEMPR search
+  - `opensite_retain`: Store new experiments or SEO updates into persistent memory
+
+### 2. FastAPI REST Endpoints & Swagger Docs
+
+Run the API independently on port 8000:
+
+```bash
+uvicorn app.api:app --host 0.0.0.0 --port 8000
+```
+
+- Interactive OpenAPI Swagger UI: `http://localhost:8000/docs`
+- `GET /health` — Service health & Hindsight memory status
+- `GET /api/sites` — List tracked properties with memory counts
+- `GET /api/memories/{site_id}` — Inspect raw memory bank
+- `POST /api/advise` — Query OpenSite growth agent (evidence-grounded)
+- `POST /api/retain` — Save experiments, algorithm updates, or page changes
+- `POST /api/recall` — Search memories with TEMPR hybrid retrieval
+- `POST /api/reflect` — Synthesize high-level patterns across all experiments
+- `POST /api/audit` — Trigger on-demand technical SEO crawler
+- `POST /api/ab-test` — Compute statistical A/B test analysis
+
+### 3. LLM Acceleration with Groq & Hindsight Cloud
+
+Configure `.env` to unlock sub-second inference:
+
+```env
+GROQ_API_KEY=gsk_your_groq_key_here
+GROQ_MODEL=qwen/qwen3-32b
+HINDSIGHT_BASE_URL=https://api.hindsight.vectorize.io
+HINDSIGHT_API_KEY=your_hindsight_api_key
+```
+
+### 4. Deploying to Cloud Platforms
+
+- **Streamlit Community Cloud:** 1-click deploy from GitHub via [Streamlit Deploy](https://share.streamlit.io/deploy?repository=mallikarjunr444-gif%2FOpenSite&branch=main&mainModule=app%2Fmain.py).
+- **Render:** Includes `render.yaml` for 1-click deployment of both the Streamlit app and FastAPI service.
+- **Railway / Heroku:** Includes `Procfile` and container definition.
+- **Docker:** `docker build -t opensite . && docker run -p 8080:8080 opensite`
+- **Firebase:** `docs/index.html` serves as the high-converting landing page via Firebase Hosting.
+
 ## Run with `.env`
 
 Copy `.env.example` to `.env` for local options. Do not commit `.env` or provider keys.
