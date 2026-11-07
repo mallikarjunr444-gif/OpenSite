@@ -108,7 +108,6 @@ app/                 Streamlit UI, connectors, crawler, and memory
 assets/              OpenSite brand assets
 docs/                Static GitHub Pages project site
 .github/workflows/   Pages publishing workflow
-public/              Firebase Hosting assets
 Dockerfile           Cloud Run container
 firebase.json        Firebase Hosting static project page configuration
 .firebaserc          OpenSite Firebase project and Hosting target
