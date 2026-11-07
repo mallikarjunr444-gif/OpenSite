@@ -11,6 +11,7 @@ OpenSite is a growth intelligence workspace for marketing teams. It brings searc
 
 - **Growth overview:** review saved site signals and ask the advisor questions grounded in that history.
 - **AI Growth Agent:** retrieve site evidence, ask a question, save an evidence-linked recommendation, and record the measured result after implementation. Optional Ollama provides local synthesis; without a model, the agent returns matching evidence.
+- **SEO intelligence:** review connected Search Console trends, the latest ranking snapshot, and issues from the most recent technical crawl.
 - **Website auditor:** crawl a public site, respect `robots.txt`, and flag missing or duplicate metadata, heading issues, and images without alt text. Audit results become memories.
 - **Content intelligence:** inspect crawled word counts, H1/H2 structure, text samples, and metadata at page level.
 - **Competitor intelligence:** compare a limited crawl of public competitor pages. It does not invent competitor traffic, rank, or backlink data.

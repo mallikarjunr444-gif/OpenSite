@@ -143,7 +143,7 @@ sites_by_id.update({site["site_id"]:site for site in load_custom_sites()})
 with st.sidebar:
     st.markdown('<div class="brand">OpenSite</div><div class="eyebrow" style="margin:5px 0 25px">SEO & conversion intelligence</div>', unsafe_allow_html=True)
     st.markdown('<div class="eyebrow">Workspace</div>', unsafe_allow_html=True)
-    page = st.radio("Navigation", ["Overview", "AI Growth Agent", "SEO audit", "Keyword rankings", "Content intelligence", "Conversion intelligence", "Experiments", "Competitor analysis", "Local SEO & Maps", "Rankings & updates", "Memory bank", "Data connections"], label_visibility="collapsed")
+    page = st.radio("Navigation", ["Overview", "AI Growth Agent", "SEO intelligence", "Keyword rankings", "Website audits", "Content intelligence", "Conversion intelligence", "Experiments", "Competitor analysis", "Local SEO & Maps", "Rankings & updates", "Memory bank", "Data connections"], label_visibility="collapsed")
     st.markdown('<div class="divider"></div><div class="eyebrow">Tracked sites</div>', unsafe_allow_html=True)
     site_id = st.selectbox("Property", list(sites_by_id), format_func=lambda key: sites_by_id[key]["domain"], label_visibility="collapsed", key="property_select")
     site = sites_by_id[site_id]
@@ -298,7 +298,37 @@ elif page == "AI Growth Agent":
                             st.success("Outcome saved to site memory.")
                             st.rerun()
 
-elif page == "SEO audit":
+elif page == "SEO intelligence":
+    add_page_header("SEARCH VISIBILITY · OPPORTUNITY", "SEO intelligence", "Connect ranking and search performance with the technical history of this site. Search Console data covers your own verified property.")
+    st.write("")
+    seo_gsc = st.session_state.get(property_state_key("gsc_live", site_id))
+    seo_snapshots = sorted([item for item in site_memories if item.get("metadata", {}).get("type") == "Ranking snapshot"], key=lambda item:item.get("timestamp", ""))
+    latest_snapshot = seo_snapshots[-1] if seo_snapshots else None
+    latest_audit = st.session_state.get(property_state_key("last_audit", site_id))
+    metric_a, metric_b, metric_c, metric_d = st.columns(4)
+    metric_a.metric("Organic clicks · 28d", f"{seo_gsc['clicks']:,}" if seo_gsc else "—", "Search Console" if seo_gsc else "Connect Search Console")
+    metric_b.metric("Impressions · 28d", f"{seo_gsc['impressions']:,}" if seo_gsc else "—")
+    metric_c.metric("Tracked queries", len(latest_snapshot.get("metadata", {}).get("rows", [])) if latest_snapshot else "—", latest_snapshot.get("metadata", {}).get("provider", "") if latest_snapshot else "No saved snapshot")
+    metric_d.metric("Pages audited", latest_audit.get("summary", {}).get("pages_crawled", "—") if latest_audit else "—", "Latest crawl" if latest_audit else "Run a website audit")
+    if seo_gsc and seo_gsc.get("rows"):
+        seo_chart = pd.DataFrame([{"Date":row.get("keys", [""])[0], "Clicks":row.get("clicks", 0), "Impressions":row.get("impressions", 0)} for row in seo_gsc["rows"]])
+        if not seo_chart.empty:
+            seo_chart["Date"] = pd.to_datetime(seo_chart["Date"])
+            st.line_chart(seo_chart.set_index("Date"), height=260)
+    elif latest_snapshot:
+        top_rows = latest_snapshot.get("metadata", {}).get("rows", [])
+        rank_frame = pd.DataFrame(top_rows)
+        if not rank_frame.empty:
+            st.markdown('<div class="section-title">Latest query snapshot</div><div class="subtle">Position and click opportunity from your most recent ranking import.</div>', unsafe_allow_html=True)
+            st.dataframe(rank_frame.head(25), use_container_width=True, hide_index=True)
+    else:
+        st.info("Connect Search Console or import rankings to begin a live SEO intelligence history. Demo property figures are labeled on Overview.")
+    if latest_audit and latest_audit.get("findings"):
+        st.markdown('<div class="section-title">Technical issues from the last crawl</div>', unsafe_allow_html=True)
+        st.dataframe(pd.DataFrame(latest_audit["findings"][:20]), use_container_width=True, hide_index=True)
+    st.caption(f"Ranking snapshots saved for this property: {len(seo_snapshots)}. Use Keyword rankings to inspect movement between imports.")
+
+elif page == "Website audits":
     add_page_header("TECHNICAL SEO · SITE HEALTH","Website auditor","Crawl your public website, find on-page technical issues, and retain audit snapshots for comparison over time.")
     st.write("")
     with st.form("site_crawl"):
@@ -309,13 +339,13 @@ elif page == "SEO audit":
         try:
             with st.spinner("Crawling same-host pages and checking metadata…"):
                 audit=crawl_site(url,max_pages=limit)
-            st.session_state["last_audit"]=audit
+            st.session_state[property_state_key("last_audit", site_id)]=audit
             summary=audit["summary"]
             details={"summary":summary,"findings":audit["findings"],"pages":audit["pages"][:100],"crawl_errors":audit["errors"]}
             remember_import(site_id,"OpenSite Website Auditor",f"{summary['pages_crawled']} pages crawled, {summary['errors']} errors, {summary['warnings']} warnings",details)
         except Exception as exc:
             st.error(f"Audit could not complete: {exc}")
-    audit=st.session_state.get("last_audit")
+    audit=st.session_state.get(property_state_key("last_audit", site_id))
     if audit:
         summary=audit["summary"]
         a,b,c,d=st.columns(4); a.metric("Pages crawled",summary["pages_crawled"]); b.metric("Errors",summary["errors"]); c.metric("Warnings",summary["warnings"]); d.metric("Info",summary["info"])
@@ -333,11 +363,9 @@ elif page == "SEO audit":
 elif page == "Content intelligence":
     add_page_header("CONTENT · COVERAGE · OPPORTUNITY", "Content intelligence", "Review content structure and crawl-level signals to find pages worth improving. This is page analysis, not a substitute for analytics outcomes.")
     st.write("")
-    content_audit = st.session_state.get("last_audit")
+    content_audit = st.session_state.get(property_state_key("last_audit", site_id))
     if not content_audit:
         st.info("Run a Website auditor crawl first. OpenSite will reuse that crawl so it does not fetch the same pages twice.")
-        if st.button("Open SEO audit", type="primary"):
-            st.session_state["content_audit_hint"] = True
     else:
         pages = content_audit.get("pages", [])
         if not pages:
