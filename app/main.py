@@ -20,6 +20,7 @@ from app import integrations
 from app.site_auditor import crawl_site
 from app.site_registry import add_site, load_custom_sites
 from app.growth_agent import advise
+from app.experiment_analysis import analyze_two_variant
 from app.seed_seo_data import SEED_SITES, seed_seo_memories
 
 
@@ -623,25 +624,76 @@ elif page == "Experiments":
     visible=[]
     for item in experiments:
         category=item["category"].lower()
-        if category_filter=="A/B tests" and "ab_test" not in category: continue
-        if category_filter=="Content tests" and "content" not in category: continue
-        if category_filter=="Conversion tests" and "cro" not in category: continue
+        tags=" ".join(item.get("tags", [])).lower()
+        if category_filter=="A/B tests" and "ab_test" not in f"{category} {tags}": continue
+        if category_filter=="Content tests" and "content" not in f"{category} {tags}": continue
+        if category_filter=="Conversion tests" and "cro" not in f"{category} {tags}": continue
         visible.append(item)
     if not visible: st.info("No experiments match that filter yet. Record your next test below.")
     for item in sorted(visible,key=lambda event:event.get("date", ""),reverse=True):
         st.markdown(f'<div class="card" style="margin-bottom:11px"><div class="event-meta">{esc(item.get("date","")[:10])} &nbsp;·&nbsp; {esc(item["category"].upper().replace("_"," "))}</div><div class="section-title">{esc(item["title"])}</div><div class="event-copy" style="font-size:13px;margin-top:7px">{esc(item["content"])}</div><div style="margin-top:10px">'+''.join(f'<span class="tag tag-lime">{esc(tag)}</span>' for tag in item.get("tags",[])[:5])+'</div></div>',unsafe_allow_html=True)
+        analysis = item.get("metadata", {}).get("analysis")
+        if analysis:
+            metric_a, metric_b, metric_c, metric_d = st.columns(4)
+            metric_a.metric("Control conversion", f"{analysis['control_rate']:.2%}")
+            metric_b.metric("Variant conversion", f"{analysis['variant_rate']:.2%}")
+            metric_c.metric("Relative lift", f"{analysis['relative_lift']:+.1%}" if analysis.get("relative_lift") is not None else "—")
+            metric_d.metric("P-value", f"{analysis['p_value']:.4f}" if analysis.get("p_value") is not None else "Not estimated")
+            st.caption(f"{analysis['interpretation'].capitalize()}. The normal approximation is withheld for low expected counts; this estimate does not adjust for repeated peeking or multiple comparisons.")
     with st.expander("Record a new experiment"):
-        with st.form("new_experiment"):
-            title=st.text_input("Experiment name")
-            hypothesis=st.text_input("Hypothesis",placeholder="We believe changing X will improve Y because…")
-            result=st.text_area("Result and learning",placeholder="Variant, sample/timeframe, measured outcome, and decision")
-            submitted=st.form_submit_button("Save experiment")
-            if submitted:
-                if not title.strip() or not result.strip(): st.error("An experiment name and result are required.")
-                else:
-                    description=f"Hypothesis: {hypothesis.strip()}. Result: {result.strip()}" if hypothesis.strip() else result.strip()
-                    hindsight_mgr.retain(site_id,f"[NEW EXPERIMENT] {title.strip()}: {description}",tags=["experiment","ab_test","user_recorded"],metadata={"type":"Experiment","title":title.strip()})
-                    st.success("Experiment saved to persistent site memory."); st.rerun()
+        test_tab, note_tab = st.tabs(["Compare two variants", "Add an experiment note"])
+        with test_tab:
+            with st.form("structured_ab_test"):
+                test_title = st.text_input("Experiment name", key="ab_name")
+                hypothesis = st.text_input("Hypothesis", placeholder="Changing X should improve Y because…", key="ab_hypothesis")
+                test_url = st.text_input("Page tested", placeholder="https://example.com/pricing", key="ab_url")
+                variant_name = st.text_input("Variant name", value="Variant B", key="ab_variant_name")
+                start_date, end_date = st.columns(2)
+                with start_date: test_start = st.date_input("Test start", key="ab_start")
+                with end_date: test_end = st.date_input("Test end", key="ab_end")
+                control_col, variant_col = st.columns(2)
+                with control_col:
+                    st.markdown("#### Control")
+                    control_visitors = st.number_input("Visitors", min_value=0, step=1, key="ab_control_visitors")
+                    control_conversions = st.number_input("Conversions", min_value=0, step=1, key="ab_control_conversions")
+                with variant_col:
+                    st.markdown(f"#### {esc(variant_name) or 'Variant'}")
+                    variant_visitors = st.number_input("Visitors", min_value=0, step=1, key="ab_variant_visitors")
+                    variant_conversions = st.number_input("Conversions", min_value=0, step=1, key="ab_variant_conversions")
+                decision = st.text_area("Decision and context", placeholder="Was the assignment randomized? Note instrumentation changes, exclusions, or other caveats.", key="ab_decision")
+                submitted = st.form_submit_button("Analyze and save test", type="primary")
+                if submitted:
+                    if not test_title.strip():
+                        st.error("Give this test a name.")
+                    else:
+                        try:
+                            analysis = analyze_two_variant(control_visitors, control_conversions, variant_visitors, variant_conversions)
+                            test_data = {
+                                "control":{"visitors":int(control_visitors), "conversions":int(control_conversions)},
+                                "variant":{"name":variant_name.strip() or "Variant B", "visitors":int(variant_visitors), "conversions":int(variant_conversions)},
+                                "analysis":analysis, "url":test_url.strip(), "start_date":test_start.isoformat(), "end_date":test_end.isoformat(), "hypothesis":hypothesis.strip(), "decision":decision.strip(),
+                            }
+                            description = f"Control {analysis['control_rate']:.2%} ({int(control_conversions)}/{int(control_visitors)}); {variant_name.strip() or 'Variant B'} {analysis['variant_rate']:.2%} ({int(variant_conversions)}/{int(variant_visitors)}); relative lift {analysis['relative_lift']:+.1%}. {analysis['interpretation']}." if analysis.get("relative_lift") is not None else f"Control {analysis['control_rate']:.2%}; variant {analysis['variant_rate']:.2%}. {analysis['interpretation']}."
+                            if hypothesis.strip(): description = f"Hypothesis: {hypothesis.strip()}. {description}"
+                            if decision.strip(): description += f" Team notes: {decision.strip()}"
+                            hindsight_mgr.retain(site_id, f"[NEW EXPERIMENT] {test_title.strip()}: {description}", tags=["experiment", "ab_test", "conversion", "user_recorded"], metadata={"type":"A/B test", "title":test_title.strip(), "test":test_data, "analysis":analysis})
+                            st.success("Two-variant comparison saved to site memory.")
+                            st.rerun()
+                        except ValueError as exc:
+                            st.error(str(exc))
+            st.caption("This is a two-proportion normal-approximation estimate. It does not correct for repeated checking, assignment bias, or multiple tests; treat it as a decision aid, not a causal guarantee.")
+        with note_tab:
+            with st.form("new_experiment"):
+                title=st.text_input("Experiment name", key="note_title")
+                note_hypothesis=st.text_input("Hypothesis",placeholder="We believe changing X will improve Y because…", key="note_hypothesis")
+                result=st.text_area("Result and learning",placeholder="Variant, sample/timeframe, measured outcome, and decision", key="note_result")
+                submitted=st.form_submit_button("Save experiment note")
+                if submitted:
+                    if not title.strip() or not result.strip(): st.error("An experiment name and result are required.")
+                    else:
+                        description=f"Hypothesis: {note_hypothesis.strip()}. Result: {result.strip()}" if note_hypothesis.strip() else result.strip()
+                        hindsight_mgr.retain(site_id,f"[NEW EXPERIMENT] {title.strip()}: {description}",tags=["experiment","ab_test","user_recorded"],metadata={"type":"Experiment","title":title.strip()})
+                        st.success("Experiment saved to persistent site memory."); st.rerun()
 
 elif page == "Rankings & updates":
     add_page_header("RANKINGS · CONTENT · ALGORITHM","Search visibility","Keep ranking changes and search updates connected to what your team published and fixed.")

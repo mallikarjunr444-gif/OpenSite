@@ -27,6 +27,7 @@ These are captures of the live Firebase project landing page. The interactive St
 - **Analytics connections:** read metrics from GA4, Plausible, PostHog, Umami, and Matomo.
 - **Conversion intelligence:** chart GA4 session/conversion history and record comparable visitor-to-lead snapshots.
 - **Experiments:** record hypotheses and outcomes; import experiment records from GrowthBook.
+- **Two-variant comparison:** save control/variant visitors and conversions, compare conversion rates, and show a two-proportion p-value only when expected counts support the normal approximation. Repeated peeking, randomization quality, and multiple tests still need human review.
 - **Local SEO & Maps:** save a business location and public profile details, geocode it on request, and plot saved locations.
 - **Search updates and page changes:** import official Google Search Central announcements into a site's timeline and log page, ranking, and technical changes against the outcome history. Timing indicates context, not cause.
 - **Performance:** run PageSpeed Insights and import Chrome UX Report field metrics.
