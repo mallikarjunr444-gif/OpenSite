@@ -2,6 +2,7 @@
 import html
 import hmac
 import os
+import uuid
 from datetime import datetime
 
 import pandas as pd
@@ -114,6 +115,10 @@ def remember_import(site_id, provider, summary, details=None):
     hindsight_mgr.retain(site_id,content,tags=["live_data",provider.lower().replace(" ","_"),"analytics_snapshot"],metadata={"type":"Live data import","provider":provider})
 
 
+def property_state_key(name, property_id):
+    return f"{name}:{property_id}"
+
+
 if not st.session_state.get("seeded"):
     # Only seed missing sample sites, so reruns and app restarts never duplicate history.
     existing = set(hindsight_mgr.get_all_banks())
@@ -126,7 +131,7 @@ sites_by_id.update({site["site_id"]:site for site in load_custom_sites()})
 with st.sidebar:
     st.markdown('<div class="brand">OpenSite</div><div class="eyebrow" style="margin:5px 0 25px">SEO & conversion intelligence</div>', unsafe_allow_html=True)
     st.markdown('<div class="eyebrow">Workspace</div>', unsafe_allow_html=True)
-    page = st.radio("Navigation", ["Overview", "SEO audit", "Content intelligence", "Competitor analysis", "Keyword rankings", "Experiments", "Rankings & updates", "Memory bank", "Data connections"], label_visibility="collapsed")
+    page = st.radio("Navigation", ["Overview", "AI Growth Agent", "SEO audit", "Keyword rankings", "Content intelligence", "Conversion intelligence", "Experiments", "Competitor analysis", "Local SEO & Maps", "Rankings & updates", "Memory bank", "Data connections"], label_visibility="collapsed")
     st.markdown('<div class="divider"></div><div class="eyebrow">Tracked sites</div>', unsafe_allow_html=True)
     site_id = st.selectbox("Property", list(sites_by_id), format_func=lambda key: sites_by_id[key]["domain"], label_visibility="collapsed", key="property_select")
     site = sites_by_id[site_id]
@@ -158,9 +163,9 @@ if page == "Overview":
     st.write("")
     wins = sum(1 for item in experiments if any(token in item["content"].lower() for token in ["winner", "increased", "generated", "surged", "drove"]))
     c1,c2,c3,c4 = st.columns(4)
-    gsc_live=st.session_state.get("gsc_live")
-    ga_live=st.session_state.get("ga4_live")
-    plausible_live=st.session_state.get("plausible_live")
+    gsc_live=st.session_state.get(property_state_key("gsc_live", site_id))
+    ga_live=st.session_state.get(property_state_key("ga4_live", site_id))
+    plausible_live=st.session_state.get(property_state_key("plausible_live", site_id))
     c1.metric("Organic clicks · 28d", f'{gsc_live["clicks"]:,}' if gsc_live else f'{site["baseline_monthly_organic"]:,}', "Live Search Console" if gsc_live else "Demo baseline")
     if ga_live:
         c2.metric("GA4 conversion events · 28d", f'{ga_live["conversions"]:,.0f}', "Live Google Analytics")
@@ -229,6 +234,54 @@ if page == "Overview":
                     hindsight_mgr.retain(site_id,f"[{prefix}] {signal_title.strip()}: {signal_result.strip()}",tags=[tag,"user_recorded"],metadata={"type":signal_type,"title":signal_title.strip()})
                     st.success("Saved. OpenSite will include this signal in future recall.")
                     st.rerun()
+
+elif page == "AI Growth Agent":
+    add_page_header("OPEN SITE · LEARN FROM HISTORY", "AI Growth Agent", "Ask about your site's search, content, and conversion history. OpenSite keeps recommendations grounded in saved evidence and tracks what happened after you acted.")
+    st.write("")
+    agent_key = property_state_key("growth_agent", site_id)
+    with st.form("growth_agent_question"):
+        agent_question = st.text_input("What should OpenSite investigate?", placeholder="What changed before our strongest organic and conversion gains?")
+        ask_agent = st.form_submit_button("Analyze site history", type="primary")
+    if ask_agent:
+        if not agent_question.strip():
+            st.error("Enter a question about this site's growth history.")
+        else:
+            evidence = hindsight_mgr.recall(site_id, agent_question, limit=8)
+            st.session_state[agent_key] = {"question": agent_question.strip(), "evidence": evidence, "advice": advise(agent_question.strip(), evidence)}
+    current_agent = st.session_state.get(agent_key)
+    if current_agent:
+        st.markdown('<div class="card"><div class="eyebrow">EVIDENCE-BASED ANALYSIS</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="insight">{esc(current_agent["advice"]["answer"])}</div><div class="event-meta">{esc(current_agent["advice"]["mode"])}</div></div>', unsafe_allow_html=True)
+        with st.expander(f"Evidence used ({len(current_agent['evidence'])})"):
+            for memory in current_agent["evidence"]:
+                st.markdown(f'<div class="event-copy">{esc(memory.get("content", ""))}</div><div class="event-meta">{esc(memory.get("timestamp", "")[:10])} · {esc(", ".join(memory.get("tags", [])))}</div><div class="divider"></div>', unsafe_allow_html=True)
+        if st.button("Save recommendation to growth plan", type="primary", key="save_growth_recommendation"):
+            recommendation_id = uuid.uuid4().hex[:12]
+            evidence_ids = [item.get("id", "") for item in current_agent["evidence"] if item.get("id")]
+            hindsight_mgr.retain(site_id, f"[AI RECOMMENDATION] {current_agent['question']}: {current_agent['advice']['answer']}", tags=["ai_recommendation", "growth_plan"], metadata={"type":"AI recommendation", "recommendation_id":recommendation_id, "question":current_agent["question"], "mode":current_agent["advice"]["mode"], "evidence_ids":evidence_ids, "status":"open"})
+            st.success("Recommendation saved. Record its outcome after implementation to improve future decisions.")
+    recommendation_rows = [item for item in hindsight_mgr.get_bank_memories(site_id) if item.get("metadata", {}).get("type") == "AI recommendation"]
+    outcome_ids = {item.get("metadata", {}).get("recommendation_id") for item in hindsight_mgr.get_bank_memories(site_id) if item.get("metadata", {}).get("type") == "Recommendation outcome"}
+    if recommendation_rows:
+        st.markdown('<div class="divider"></div><div class="section-title">Growth plan and outcomes</div>', unsafe_allow_html=True)
+        for recommendation in reversed(recommendation_rows[-10:]):
+            meta = recommendation.get("metadata", {})
+            status = "Outcome recorded" if meta.get("recommendation_id") in outcome_ids else "Awaiting outcome"
+            st.markdown(f'<div class="card" style="margin:8px 0"><div class="event-meta">{esc(recommendation.get("timestamp", "")[:10])} · {esc(status.upper())}</div><div class="event-copy">{esc(recommendation.get("content", ""))}</div></div>', unsafe_allow_html=True)
+        pending = [item for item in recommendation_rows if item.get("metadata", {}).get("recommendation_id") not in outcome_ids]
+        if pending:
+            with st.expander("Record a recommendation outcome"):
+                with st.form("recommendation_outcome"):
+                    selected_rec = st.selectbox("Implemented recommendation", pending, format_func=lambda item: item.get("metadata", {}).get("question", item.get("content", ""))[:100])
+                    outcome_detail = st.text_area("What changed and what did you measure?", placeholder="Include implementation date, comparison period, traffic/conversions/rankings, and caveats.")
+                    outcome_submit = st.form_submit_button("Save measured outcome")
+                    if outcome_submit:
+                        if not outcome_detail.strip():
+                            st.error("Describe the measured result before saving.")
+                        else:
+                            rec_id = selected_rec.get("metadata", {}).get("recommendation_id", "")
+                            hindsight_mgr.retain(site_id, f"[RECOMMENDATION OUTCOME] {selected_rec.get('metadata', {}).get('question', 'Growth recommendation')}: {outcome_detail.strip()}", tags=["recommendation_outcome", "growth_learning"], metadata={"type":"Recommendation outcome", "recommendation_id":rec_id, "recommendation_memory_id":selected_rec.get("id", ""), "result":outcome_detail.strip()})
+                            st.success("Outcome saved to site memory.")
 
 elif page == "SEO audit":
     add_page_header("TECHNICAL SEO · SITE HEALTH","Website auditor","Crawl your public website, find on-page technical issues, and retain audit snapshots for comparison over time.")
