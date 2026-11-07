@@ -4,3 +4,7 @@ requests>=2.32,<3
 pydantic>=2.8,<3
 python-dotenv>=1.0,<2
 google-cloud-firestore>=2.19,<3
+hindsight-client>=1.2.0
+groq>=1.7.0
+fastapi>=0.115.0
+uvicorn>=0.30.0
