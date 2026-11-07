@@ -81,14 +81,15 @@ The Firebase project is `opensite-growth-mr444`; its Hosting site alias `opensit
 The project and Hosting site have been created. Cloud Run requires an active billing account even when staying within its free quota. The following steps apply only after linking an open billing account to the Firebase project and enabling Cloud Run, Cloud Build, Artifact Registry, Secret Manager, and Firestore APIs:
 
 1. Create a Secret Manager secret named `opensite-access-password` containing a strong password, then grant the Cloud Run service account access to that secret.
-2. Configure `OPENSITE_MEMORY_BACKEND=firestore` and grant the service account Firestore access.
-3. Deploy from the repository root:
+2. Create the default Firestore database in Native mode. Choose a location near the Cloud Run service and users; the location cannot be changed after creation. Grant the Cloud Run service account Firestore access and set `OPENSITE_MEMORY_BACKEND=firestore`.
+3. Deploy the app from the repository root:
 
 ```bash
 gcloud config set project opensite-growth-mr444
 gcloud run deploy opensite --source . --project opensite-growth-mr444 --region us-central1 --allow-unauthenticated --port 8080 --min 0 --max 2 --memory 1Gi --set-env-vars OPENSITE_MEMORY_BACKEND=firestore --set-secrets OPENSITE_ACCESS_PASSWORD=opensite-access-password:latest
-firebase deploy --only hosting --project opensite-growth-mr444
 ```
+
+Cloud Run prints the interactive app's service URL when deployment completes. Firebase Hosting remains the static project page; deploy it separately when `docs/` changes.
 
 Cloud Run requires an open billing account even though it has a free usage quota. The only billing account available during setup is closed. Google also rejected enabling Cloud Run, Cloud Build, Artifact Registry, and Secret Manager APIs without an open billing account, so the Python app is not deployed yet. Usage beyond included quotas can be billed. Firebase Hosting currently serves the static landing page; it cannot run this Python app by itself.
 
