@@ -4,34 +4,652 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#090a08">
-  <meta name="description" content="OpenSite connects SEO history, content performance, and conversion experiments so growth teams can learn what works over time.">
-  <title>OpenSite — Growth intelligence</title>
+  <meta name="description" content="OpenSite is an AI-powered SEO & conversion intelligence agent that remembers your site's ranking history, A/B tests, algorithm updates, and content performance — learning what actually drives growth over time.">
+  <meta name="keywords" content="SEO intelligence, conversion optimization, AI agent, growth analytics, A/B testing, Hindsight memory, ranking history">
+  <meta property="og:title" content="OpenSite — SEO & Conversion Intelligence Agent">
+  <meta property="og:description" content="An AI agent that remembers your growth history and learns what actually drives rankings and conversions over time.">
+  <meta property="og:type" content="website">
+  <title>OpenSite — AI-Powered SEO & Conversion Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap">
   <style>
-    :root{color-scheme:dark;--bg:#090a08;--panel:#12130f;--line:#292b23;--text:#f4f4f1;--muted:#999b8f;--lime:#d5ff82;--max:1160px}
-    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse at 80% -10%,#1b2110 0,transparent 38%),var(--bg);color:var(--text);font:16px/1.6 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-    a{color:inherit;text-decoration:none}.wrap{width:min(var(--max),calc(100% - 40px));margin:auto}.nav{height:82px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #20211c}.brand{font-size:27px;font-weight:850;letter-spacing:-.08em}.brand b{color:var(--lime)}.navlinks{display:flex;gap:28px;color:#b9bbb0;font-size:13px}.navlinks a:hover{color:var(--lime)}.button{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 19px;border:1px solid #444739;border-radius:9px;font-weight:650;font-size:14px;transition:.18s}.button.primary{background:var(--lime);color:#10120d;border-color:var(--lime)}.button:hover{transform:translateY(-2px);border-color:var(--lime)}
-    .hero{padding:104px 0 78px;max-width:860px}.eyebrow{font:11px ui-monospace,SFMono-Regular,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--lime)}h1{font-size:clamp(48px,8vw,88px);line-height:.99;letter-spacing:-.075em;margin:22px 0}.hero p{max-width:620px;color:#b4b6ab;font-size:18px;line-height:1.7}.actions{display:flex;gap:12px;margin-top:29px;flex-wrap:wrap}.note{color:#77796f;font-size:12px;margin-top:18px}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding:10px 0 78px}.metric,.feature,.panel{background:linear-gradient(145deg,#151610,#10110e);border:1px solid var(--line);border-radius:15px}.metric{padding:23px}.metric strong{display:block;font-size:19px;letter-spacing:-.04em}.metric span{font-size:12px;color:var(--muted)}.preview{margin:4px 0 58px;padding:10px;border:1px solid var(--line);border-radius:17px;background:#11120f;box-shadow:0 28px 90px #0008}.preview img{display:block;width:100%;height:auto;border-radius:10px}.preview-caption{padding:13px 8px 4px;color:var(--muted);font-size:12px;display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap}.preview-caption a{color:var(--lime)}
-    section{padding:63px 0}.section-head{max-width:650px;margin-bottom:28px}.section-head h2{font-size:clamp(32px,5vw,50px);line-height:1.08;letter-spacing:-.06em;margin:10px 0}.section-head p{color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.feature{padding:23px;min-height:188px}.icon{width:36px;height:36px;border-radius:10px;background:#202719;color:var(--lime);display:grid;place-items:center;font-weight:750}.feature h3{margin:19px 0 6px;letter-spacing:-.035em}.feature p{margin:0;color:var(--muted);font-size:14px}.workflow{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:center}.panel{padding:26px}.signal{border-bottom:1px solid #292b23;padding:15px 0}.signal:last-child{border:0}.signal small{display:block;color:var(--muted);font:10px ui-monospace,monospace;letter-spacing:.08em}.signal b{display:block;font-size:14px;margin-top:4px}.signal em{font-style:normal;color:var(--lime);font-size:12px}.quote{font-size:29px;line-height:1.25;letter-spacing:-.045em}.quote span{color:var(--lime)}footer{border-top:1px solid #20211c;padding:30px 0;color:#77796f;font-size:12px;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
-    @media(max-width:760px){.navlinks{display:none}.hero{padding:76px 0 55px}.metrics,.grid{grid-template-columns:1fr}.metric{padding:18px}.workflow{grid-template-columns:1fr}section{padding:45px 0}}
+    /* ── Design Tokens ── */
+    :root {
+      color-scheme: dark;
+      --bg: #090a08;
+      --surface: #12130f;
+      --surface-hi: #171812;
+      --line: #282923;
+      --line-hi: #3a3c32;
+      --text: #f4f4f1;
+      --text-mid: #b4b6ab;
+      --muted: #85867f;
+      --lime: #d5ff82;
+      --lime-dim: #485d2e;
+      --lime-glow: rgba(213, 255, 130, .08);
+      --max: 1200px;
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
+
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font: 400 16px/1.65 'DM Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    a { color: inherit; text-decoration: none; }
+    img { display: block; max-inline-size: 100%; block-size: auto; }
+
+    /* ── Layout ── */
+    .wrap { inline-size: min(var(--max), calc(100% - 48px)); margin-inline: auto; }
+
+    /* ── Ambient background ── */
+    .ambient {
+      position: fixed; inset: 0; z-index: -1; pointer-events: none;
+      background:
+        radial-gradient(ellipse 80% 50% at 75% -5%, rgba(27, 33, 16, .7), transparent),
+        radial-gradient(ellipse 60% 40% at 10% 90%, rgba(20, 26, 12, .4), transparent),
+        var(--bg);
+    }
+
+    /* ── Nav ── */
+    .nav {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      block-size: 72px;
+      background: rgba(9, 10, 8, .82);
+      -webkit-backdrop-filter: blur(16px) saturate(160%);
+      backdrop-filter: blur(16px) saturate(160%);
+      border-block-end: 1px solid rgba(40, 41, 35, .6);
+    }
+    .brand {
+      font-size: 24px; font-weight: 800; letter-spacing: -.07em;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .brand .dot { color: var(--lime); font-size: 28px; line-height: 1; }
+    .brand b { color: var(--lime); }
+    .navlinks { display: flex; align-items: center; gap: 26px; font-size: 13px; color: var(--text-mid); }
+    .navlinks a { transition: color .15s; }
+    .navlinks a:hover { color: var(--lime); }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      min-block-size: 44px; padding: 0 20px;
+      border: 1px solid var(--line-hi); border-radius: var(--radius-sm);
+      font: 600 14px/1 'DM Sans', sans-serif;
+      cursor: pointer; transition: all .2s ease;
+      white-space: nowrap;
+    }
+    .btn:hover { transform: translateY(-2px); border-color: var(--lime); color: var(--lime); }
+    .btn-primary {
+      background: var(--lime); color: #0d0e0b; border-color: var(--lime);
+      box-shadow: 0 0 24px rgba(213, 255, 130, .12);
+    }
+    .btn-primary:hover { background: #e4ffaa; transform: translateY(-2px); box-shadow: 0 0 32px rgba(213, 255, 130, .2); }
+    .btn-ghost { background: transparent; color: var(--text); }
+    .btn-sm { min-block-size: 36px; padding: 0 14px; font-size: 13px; }
+
+    /* ── Eyebrow ── */
+    .eyebrow {
+      font: 500 10.5px 'DM Mono', ui-monospace, monospace;
+      letter-spacing: .16em; text-transform: uppercase;
+      color: var(--lime);
+    }
+
+    /* ── Hero ── */
+    .hero {
+      padding: 100px 0 60px;
+      position: relative;
+    }
+    .hero h1 {
+      font-size: clamp(42px, 7vw, 82px);
+      line-height: .98; letter-spacing: -.075em;
+      font-weight: 800;
+      margin: 20px 0 0;
+      max-inline-size: 900px;
+    }
+    .hero h1 .highlight {
+      background: linear-gradient(135deg, var(--lime), #a8d45f);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      max-inline-size: 600px; margin: 22px 0 0;
+      color: var(--text-mid); font-size: 17px; line-height: 1.7;
+    }
+    .hero-actions { display: flex; gap: 12px; margin-block-start: 32px; flex-wrap: wrap; }
+    .hero-note { color: var(--muted); font-size: 12px; margin-block-start: 16px; }
+    .hero-note a { color: var(--lime); text-decoration: underline; text-underline-offset: 2px; }
+
+    /* ── Live Terminal ── */
+    .terminal {
+      margin: 48px 0 20px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: 0 32px 80px rgba(0, 0, 0, .35);
+    }
+    .terminal-bar {
+      display: flex; align-items: center; gap: 7px;
+      padding: 12px 16px;
+      background: rgba(18, 19, 15, .9);
+      border-block-end: 1px solid var(--line);
+    }
+    .terminal-dot { inline-size: 10px; block-size: 10px; border-radius: 50%; }
+    .terminal-dot.red { background: #ff5f57; }
+    .terminal-dot.yellow { background: #febc2e; }
+    .terminal-dot.green { background: #28c840; }
+    .terminal-title {
+      flex: 1; text-align: center;
+      font: 500 11px 'DM Mono', monospace; color: var(--muted);
+    }
+    .terminal-body {
+      padding: 24px 28px;
+      font: 400 13px/1.85 'DM Mono', monospace;
+      color: var(--text-mid);
+      min-block-size: 220px;
+      position: relative;
+    }
+    .terminal-body .prompt { color: var(--lime); }
+    .terminal-body .result { color: var(--text); font-weight: 500; }
+    .terminal-body .dim { color: var(--muted); }
+    .terminal-body .tag {
+      display: inline-block; padding: 2px 7px;
+      border: 1px solid var(--lime-dim); border-radius: 99px;
+      color: var(--lime); font-size: 10px; margin: 0 3px;
+    }
+    .terminal-line { opacity: 0; animation: termFade .4s ease forwards; }
+    @keyframes termFade { to { opacity: 1; } }
+
+    /* ── Stats Bar ── */
+    .stats {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+      background: var(--line);
+      border: 1px solid var(--line); border-radius: var(--radius);
+      overflow: hidden;
+      margin: 32px 0 0;
+    }
+    .stat {
+      background: var(--surface); padding: 22px 24px;
+      transition: background .2s;
+    }
+    .stat:hover { background: var(--surface-hi); }
+    .stat-value {
+      font-size: 28px; font-weight: 700; letter-spacing: -.04em;
+      background: linear-gradient(135deg, var(--text), var(--lime));
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .stat-label { font-size: 12px; color: var(--muted); margin-block-start: 4px; }
+
+    /* ── Section ── */
+    section { padding: 80px 0; }
+    .section-head { max-inline-size: 700px; margin-block-end: 40px; }
+    .section-head h2 {
+      font-size: clamp(30px, 5vw, 48px);
+      line-height: 1.08; letter-spacing: -.055em;
+      font-weight: 700; margin: 12px 0 0;
+    }
+    .section-head p { color: var(--muted); margin-block-start: 12px; font-size: 15px; }
+
+    /* ── Feature Grid ── */
+    .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .feature {
+      background: linear-gradient(155deg, var(--surface-hi), var(--surface));
+      border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 28px 24px;
+      transition: transform .2s, border-color .2s, box-shadow .2s;
+    }
+    .feature:hover {
+      transform: translateY(-3px);
+      border-color: var(--line-hi);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, .2);
+    }
+    .feature-icon {
+      inline-size: 40px; block-size: 40px;
+      border-radius: var(--radius-sm);
+      background: rgba(213, 255, 130, .08);
+      border: 1px solid var(--lime-dim);
+      display: grid; place-items: center;
+      font-size: 18px; color: var(--lime);
+    }
+    .feature h3 { font-size: 16px; margin: 16px 0 6px; letter-spacing: -.03em; }
+    .feature p { color: var(--muted); font-size: 13.5px; line-height: 1.6; }
+
+    /* ── How It Works ── */
+    .workflow-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 28px;
+      align-items: center;
+    }
+    .workflow-text h2 {
+      font-size: clamp(30px, 4.5vw, 48px);
+      line-height: 1.08; letter-spacing: -.055em;
+    }
+    .workflow-text p { color: var(--muted); margin: 16px 0 28px; font-size: 15px; }
+    .step-list { list-style: none; }
+    .step {
+      display: flex; gap: 18px; align-items: flex-start;
+      padding: 20px 0;
+      border-block-end: 1px solid var(--line);
+    }
+    .step:last-child { border: 0; }
+    .step-num {
+      flex-shrink: 0;
+      inline-size: 36px; block-size: 36px; border-radius: 50%;
+      background: var(--lime-glow); border: 1px solid var(--lime-dim);
+      display: grid; place-items: center;
+      font: 600 13px 'DM Mono', monospace; color: var(--lime);
+    }
+    .step-content b { display: block; font-size: 14px; margin-block-end: 3px; }
+    .step-content span { color: var(--muted); font-size: 13px; }
+    .step-content em { font-style: normal; color: var(--lime); font-size: 12px; display: block; margin-block-start: 4px; }
+
+    /* ── Memory Showcase Panel ── */
+    .memory-panel {
+      background: linear-gradient(155deg, var(--surface-hi), var(--surface));
+      border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 32px;
+    }
+    .memory-entry {
+      padding: 14px 0;
+      border-block-end: 1px solid rgba(40, 41, 35, .5);
+    }
+    .memory-entry:last-child { border: 0; }
+    .memory-entry small {
+      font: 500 10px 'DM Mono', monospace;
+      letter-spacing: .1em; text-transform: uppercase;
+      color: var(--muted);
+    }
+    .memory-entry b { display: block; font-size: 13.5px; margin-block-start: 5px; }
+    .memory-entry .delta {
+      color: var(--lime); font-size: 12px;
+      font-family: 'DM Mono', monospace;
+      margin-block-start: 3px;
+    }
+
+    /* ── Integrations ── */
+    .integrations { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0; }
+    .integration {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 16px;
+      background: var(--surface); border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      font-size: 13px; color: var(--text-mid);
+      transition: border-color .15s, color .15s;
+    }
+    .integration:hover { border-color: var(--lime-dim); color: var(--text); }
+
+    /* ── CTA Banner ── */
+    .cta-banner {
+      background: linear-gradient(145deg, #171812, #11120f);
+      border: 1px solid var(--line); border-radius: var(--radius);
+      padding: clamp(32px, 6vw, 64px);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-banner::before {
+      content: ''; position: absolute;
+      inset-block-start: -50%; inset-inline-start: 50%;
+      inline-size: 400px; block-size: 400px;
+      transform: translateX(-50%);
+      background: radial-gradient(circle, rgba(213, 255, 130, .06), transparent 70%);
+      pointer-events: none;
+    }
+    .cta-banner h2 {
+      font-size: clamp(26px, 4vw, 44px);
+      letter-spacing: -.05em; line-height: 1.1;
+      position: relative;
+    }
+    .cta-banner h2 span { color: var(--lime); }
+    .cta-banner p { color: var(--muted); margin: 16px auto 28px; max-inline-size: 520px; }
+    .cta-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; position: relative; }
+
+    /* ── Tech Stack ── */
+    .stack {
+      display: flex; align-items: center; justify-content: center;
+      gap: 32px; flex-wrap: wrap;
+      padding: 24px 0;
+      color: var(--muted); font-size: 13px;
+    }
+    .stack span { display: flex; align-items: center; gap: 6px; }
+    .stack .sep { color: var(--line); }
+
+    /* ── Footer ── */
+    footer {
+      border-block-start: 1px solid var(--line);
+      padding: 28px 0;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 16px;
+      color: var(--muted); font-size: 12px;
+    }
+    footer a { transition: color .15s; }
+    footer a:hover { color: var(--lime); }
+
+    /* ── Scroll animations ── */
+    .reveal {
+      opacity: 0; transform: translateY(20px);
+      transition: opacity .6s ease, transform .6s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .features { grid-template-columns: 1fr 1fr; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 700px) {
+      .navlinks { display: none; }
+      .hero { padding: 68px 0 40px; }
+      .features { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: 1fr; }
+      .workflow-grid { grid-template-columns: 1fr; }
+      section { padding: 56px 0; }
+    }
+
+    /* ── Reduced motion ── */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
   </style>
 </head>
 <body>
-  <header class="wrap nav"><a class="brand" href="#top" aria-label="OpenSite home">Open<b>Site</b></a><nav class="navlinks" aria-label="Main navigation"><a href="#platform">Platform</a><a href="#workflow">How it works</a><a href="https://github.com/mallikarjunr444-gif/OpenSite#readme">Documentation</a></nav><a class="button" href="https://share.streamlit.io/deploy?repository=mallikarjunr444-gif%2FOpenSite&amp;branch=main&amp;mainModule=app%2Fmain.py">Deploy the app ↗</a></header>
-  <main id="top" class="wrap">
-    <section class="hero"><div class="eyebrow">Growth intelligence for the long game</div><h1>Make every growth<br>experiment count.</h1><p>OpenSite connects your search visibility, content performance, and conversion experiments in one lasting learning loop. See what changed, what followed, and what your team should learn next.</p><div class="actions"><a class="button primary" href="https://share.streamlit.io/deploy?repository=mallikarjunr444-gif%2FOpenSite&amp;branch=main&amp;mainModule=app%2Fmain.py">Deploy the interactive app ↗</a><a class="button" href="https://github.com/mallikarjunr444-gif/OpenSite#readme">View setup guide ↗</a></div><div class="note">Sign in with GitHub and confirm the prefilled OpenSite repository and app file to publish the backend.</div></section>
-    <div class="preview"><img src="opensite-dashboard.png" alt="OpenSite interactive SEO and conversion intelligence dashboard preview" loading="lazy"><div class="preview-caption"><span>Interactive workspace preview · demo metrics are labeled in the app</span><a href="https://share.streamlit.io/deploy?repository=mallikarjunr444-gif%2FOpenSite&amp;branch=main&amp;mainModule=app%2Fmain.py">Deploy this app ↗</a></div></div>
-    <div class="metrics"><div class="metric"><strong>Search history</strong><span>Rankings, queries, and algorithm context</span></div><div class="metric"><strong>Content signals</strong><span>Page structure, quality checks, and outcomes</span></div><div class="metric"><strong>Experiment memory</strong><span>Tests become lessons your team can reuse</span></div></div>
-    <section id="platform"><div class="section-head"><div class="eyebrow">A connected growth workspace</div><h2>From scattered metrics<br>to useful decisions.</h2><p>Bring your existing open tools together. OpenSite helps teams keep the context that gets lost between dashboards, experiments, and quarterly reviews.</p></div><div class="grid">
-      <article class="feature"><div class="icon">↗</div><h3>SEO intelligence</h3><p>Connect Search Console, tracked keyword history, technical audits, and PageSpeed signals.</p></article>
-      <article class="feature"><div class="icon">✳</div><h3>Content performance</h3><p>Inspect page structure and connect content changes with measured search and analytics outcomes.</p></article>
-      <article class="feature"><div class="icon">◉</div><h3>Conversion learning</h3><p>Keep hypotheses, test results, and decisions together so wins can inform the next test.</p></article>
-      <article class="feature"><div class="icon">⌁</div><h3>Analytics that stay yours</h3><p>Read-only connections for Google Analytics, Plausible, PostHog, Umami, and Matomo.</p></article>
-      <article class="feature"><div class="icon">⟲</div><h3>Durable site memory</h3><p>Recall past signals by property with local or Firestore storage and optional Hindsight mirroring.</p></article>
-      <article class="feature"><div class="icon">✦</div><h3>Evidence-led advisor</h3><p>Ask questions about your history. OpenSite keeps observed results distinct from hypotheses.</p></article>
-    </div></section>
-    <section id="workflow"><div class="workflow"><div><div class="eyebrow">Memory makes the difference</div><h2 style="font-size:clamp(34px,5vw,54px);line-height:1.05;letter-spacing:-.06em">Your next decision starts with what you already learned.</h2><p style="color:var(--muted)">Connect a property, bring in live data, and record the changes your team makes. OpenSite builds a searchable timeline that gives future recommendations context.</p><a class="button primary" href="https://github.com/mallikarjunr444-gif/OpenSite#readme">Get started in the README ↗</a></div><div class="panel"><div class="eyebrow">A property's learning loop</div><div class="signal"><small>01 · OBSERVE</small><b>Search clicks slipped after a title rewrite</b></div><div class="signal"><small>02 · CONNECT</small><b>Compare the query mix and published changes</b></div><div class="signal"><small>03 · LEARN</small><b>Keep the result with the test and timeframe</b><em>Memory available for the next decision</em></div></div></div></section>
-    <section><div class="panel" style="padding:clamp(25px,6vw,58px)"><div class="eyebrow">Built to learn, not just report</div><p class="quote">“The best growth dashboard remembers <span>what happened before.</span>”</p><p style="color:var(--muted);margin-bottom:0">OpenSite is an open-source foundation for SEO and conversion intelligence. Connect your own providers and grow the workflow around your team.</p></div></section>
+  <div class="ambient" aria-hidden="true"></div>
+
+  <!-- ══ Navigation ══ -->
+  <header class="wrap nav">
+    <a class="brand" href="#top" aria-label="OpenSite home">
+      <span class="dot">◉</span> Open<b>Site</b>
+    </a>
+    <nav class="navlinks" aria-label="Main">
+      <a href="#features">Features</a>
+      <a href="#how-it-works">How it works</a>
+      <a href="#integrations">Integrations</a>
+      <a href="https://github.com/mallikarjunr444-gif/OpenSite#readme">Docs</a>
+    </nav>
+    <a class="btn btn-primary btn-sm" href="https://share.streamlit.io/deploy?repository=mallikarjunr444-gif%2FOpenSite&branch=main&mainModule=app%2Fmain.py">Launch App ↗</a>
+  </header>
+
+  <main id="top">
+    <!-- ══ Hero ══ -->
+    <section class="hero wrap">
+      <div class="eyebrow">AI-Powered Growth Intelligence</div>
+      <h1>Your SEO agent that <span class="highlight">never forgets.</span></h1>
+      <p>OpenSite connects your search rankings, content experiments, and conversion data into one persistent learning loop — powered by Hindsight memory. Every test, every algorithm update, every win becomes intelligence for your next decision.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="https://share.streamlit.io/deploy?repository=mallikarjunr444-gif%2FOpenSite&branch=main&mainModule=app%2Fmain.py">Deploy the App — Free ↗</a>
+        <a class="btn btn-ghost" href="https://github.com/mallikarjunr444-gif/OpenSite">View on GitHub ↗</a>
+      </div>
+      <p class="hero-note">Built with <a href="https://hindsight.vectorize.io/">Hindsight</a> persistent memory · Open source · Self-hostable</p>
+    </section>
+
+    <!-- ══ Live Terminal Demo ══ -->
+    <div class="wrap">
+      <div class="terminal reveal">
+        <div class="terminal-bar">
+          <span class="terminal-dot red"></span>
+          <span class="terminal-dot yellow"></span>
+          <span class="terminal-dot green"></span>
+          <span class="terminal-title">opensite · growth intelligence workspace</span>
+          <span style="inline-size:30px"></span>
+        </div>
+        <div class="terminal-body" id="terminalBody">
+          <div class="terminal-line" style="animation-delay:.2s"><span class="prompt">opensite recall</span> <span class="dim">"What drove our best ranking gains?"</span></div>
+          <div class="terminal-line" style="animation-delay:.8s"><br><span class="dim">── Searching 47 memories across 3 months ──</span></div>
+          <div class="terminal-line" style="animation-delay:1.4s"><br><span class="result">Memory #1</span> <span class="tag">rank_boost</span> <span class="tag">content_experiment</span> <span class="dim">2026-09-20</span></div>
+          <div class="terminal-line" style="animation-delay:1.9s"><span class="dim">  Interactive code sandboxes + architecture diagrams</span></div>
+          <div class="terminal-line" style="animation-delay:2.3s"><span class="dim">  → Rank #18 → #3 for "event driven microservices" · +48% organic CTR</span></div>
+          <div class="terminal-line" style="animation-delay:2.9s"><br><span class="result">Memory #2</span> <span class="tag">helpful_content</span> <span class="tag">eeat</span> <span class="dim">2026-10-25</span></div>
+          <div class="terminal-line" style="animation-delay:3.3s"><span class="dim">  Google Helpful Content refresh rewarded first-party data & author schemas</span></div>
+          <div class="terminal-line" style="animation-delay:3.7s"><span class="dim">  → +22% organic traffic surge · Competitor lost 40%</span></div>
+          <div class="terminal-line" style="animation-delay:4.3s"><br><span class="result">Memory #3</span> <span class="tag">conversion_winner</span> <span class="tag">cta_optimization</span> <span class="dim">2026-10-08</span></div>
+          <div class="terminal-line" style="animation-delay:4.7s"><span class="dim">  "Deploy with 1-Click (No Credit Card)" CTA variant</span></div>
+          <div class="terminal-line" style="animation-delay:5.1s"><span class="dim">  → +67.8% conversion lift · 2.8% → 4.7%</span></div>
+          <div class="terminal-line" style="animation-delay:5.8s"><br><span class="prompt">opensite reflect</span> <span class="dim">"Synthesize winning patterns"</span></div>
+          <div class="terminal-line" style="animation-delay:6.5s"><br>📊 <span class="result">Pattern: Interactive content + verified authorship + friction removal</span></div>
+          <div class="terminal-line" style="animation-delay:7s"><span class="dim">   consistently outperform generic listicles across both rankings and conversions.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ Stats ══ -->
+    <div class="wrap reveal">
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-value">13</div>
+          <div class="stat-label">Dashboard pages</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">9+</div>
+          <div class="stat-label">Live integrations</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">3</div>
+          <div class="stat-label">Hindsight verbs: retain · recall · reflect</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">∞</div>
+          <div class="stat-label">Persistent memories</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ Features ══ -->
+    <section id="features" class="wrap">
+      <div class="section-head reveal">
+        <div class="eyebrow">A complete growth workspace</div>
+        <h2>From scattered dashboards<br>to compounding knowledge.</h2>
+        <p>Every signal your team captures becomes part of the agent's permanent memory — making every future recommendation smarter.</p>
+      </div>
+      <div class="features">
+        <article class="feature reveal">
+          <div class="feature-icon">↗</div>
+          <h3>SEO Intelligence</h3>
+          <p>Connect Search Console for live clicks, impressions, CTR, and position data. Track ranking snapshots over time with movement analysis.</p>
+        </article>
+        <article class="feature reveal">
+          <div class="feature-icon">⚡</div>
+          <h3>AI Growth Agent</h3>
+          <p>Ask questions about your site's history. The agent recalls evidence from Hindsight memory and synthesizes strategies grounded in past outcomes.</p>
+        </article>
+        <article class="feature reveal">
+          <div class="feature-icon">◉</div>
+          <h3>Conversion Intelligence</h3>
+          <p>Track conversion snapshots, GA4 events, and A/B test outcomes. Compare what happened before and after each experiment.</p>
+        </article>
+        <article class="feature reveal">
+          <div class="feature-icon">🔬</div>
+          <h3>Experiment Lab</h3>
+          <p>Record A/B tests with statistical analysis — control vs variant, relative lift, p-values. Keep hypotheses, results, and decisions together.</p>
+        </article>
+        <article class="feature reveal">
+          <div class="feature-icon">🕸️</div>
+          <h3>Website Auditor</h3>
+          <p>Crawl your site for technical SEO issues — missing titles, duplicate H1s, broken images, thin content. Retain audit snapshots for trend analysis.</p>
+        </article>
+        <article class="feature reveal">
+          <div class="feature-icon">📄</div>
+          <h3>Content Intelligence</h3>
+          <p>Analyze page structure, word counts, heading hierarchies, and image alt coverage. Connect content changes to measured search outcomes.</p>
+        </article>
+        <article class="feature reveal">
+          <div class="feature-icon">🏆</div>
+          <h3>Competitor Analysis</h3>
+          <p>Crawl competitor public pages and compare content depth, structure, and technical signals against your own site.</p>
+        </article>
+        <article class="feature reveal">
+          <div class="feature-icon">📍</div>
+          <h3>Local SEO &amp; Maps</h3>
+          <p>Geocode business locations with OpenStreetMap, map them visually, and track local presence alongside your site's organic performance.</p>
+        </article>
+        <article class="feature reveal">
+          <div class="feature-icon">🧠</div>
+          <h3>Hindsight Memory Bank</h3>
+          <p>Search, browse, and query all your retained memories. Every experiment, audit, ranking change, and algorithm update is permanently retrievable.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ══ How It Works ══ -->
+    <section id="how-it-works" class="wrap">
+      <div class="workflow-grid">
+        <div class="workflow-text reveal">
+          <div class="eyebrow">Powered by Hindsight memory</div>
+          <h2>Your next decision starts with what you already learned.</h2>
+          <p>OpenSite uses Hindsight's three core primitives — <strong>retain</strong>, <strong>recall</strong>, and <strong>reflect</strong> — to build a persistent learning loop that compounds your team's growth knowledge over time.</p>
+          <a class="btn btn-primary" href="https://github.com/mallikarjunr444-gif/OpenSite#readme">Get started →</a>
+        </div>
+        <div class="memory-panel reveal">
+          <div class="eyebrow" style="margin-block-end:8px">The learning loop in action</div>
+          <ol class="step-list">
+            <li class="step">
+              <div class="step-num">01</div>
+              <div class="step-content">
+                <b>Retain — capture every signal</b>
+                <span>Record experiments, ranking changes, algorithm updates, audit findings, and conversion snapshots into Hindsight memory banks.</span>
+              </div>
+            </li>
+            <li class="step">
+              <div class="step-num">02</div>
+              <div class="step-content">
+                <b>Recall — find what matters</b>
+                <span>Multi-strategy retrieval matches your query across semantic meaning, keywords, entity relationships, and temporal context.</span>
+              </div>
+            </li>
+            <li class="step">
+              <div class="step-num">03</div>
+              <div class="step-content">
+                <b>Reflect — synthesize wisdom</b>
+                <span>The agent reasons across accumulated memories to surface cross-experiment patterns and evidence-backed strategies.</span>
+                <em>✦ Memory compounds — every future decision is smarter</em>
+              </div>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ Integrations ══ -->
+    <section id="integrations" class="wrap">
+      <div class="section-head reveal">
+        <div class="eyebrow">Bring your existing stack</div>
+        <h2>9+ read-only integrations.</h2>
+        <p>Connect your analytics and search tools. All connections are read-only — credentials stay in your browser session and are never written to OpenSite memory.</p>
+      </div>
+      <div class="integrations reveal">
+        <div class="integration">🔍 Google Search Console</div>
+        <div class="integration">📊 Google Analytics 4</div>
+        <div class="integration">⚡ Plausible Analytics</div>
+        <div class="integration">🦔 PostHog</div>
+        <div class="integration">📈 Umami Analytics</div>
+        <div class="integration">📉 Matomo</div>
+        <div class="integration">🚀 PageSpeed Insights</div>
+        <div class="integration">🌐 Chrome UX Report</div>
+        <div class="integration">🐻 SerpBear</div>
+        <div class="integration">🧪 GrowthBook</div>
+        <div class="integration">🗺️ OpenStreetMap Geocoding</div>
+        <div class="integration">📰 Google Search Central RSS</div>
+      </div>
+    </section>
+
+    <!-- ══ Memory Before/After ══ -->
+    <section class="wrap">
+      <div class="workflow-grid">
+        <div class="memory-panel reveal">
+          <div class="eyebrow" style="margin-block-end:16px">Without memory · Day 1</div>
+          <div class="memory-entry">
+            <small>USER ASKS</small>
+            <b>"What should we test on the pricing page?"</b>
+          </div>
+          <div class="memory-entry">
+            <small>GENERIC AGENT RESPONSE</small>
+            <b style="color: var(--muted)">"Try testing different headlines, CTA colors, and pricing tiers. Consider A/B testing your call-to-action button."</b>
+            <div class="delta" style="color: var(--muted);">❌ Generic textbook advice · No context</div>
+          </div>
+        </div>
+        <div class="memory-panel reveal" style="border-color: var(--lime-dim);">
+          <div class="eyebrow" style="margin-block-end:16px">With Hindsight · Day 30</div>
+          <div class="memory-entry">
+            <small>USER ASKS THE SAME QUESTION</small>
+            <b>"What should we test on the pricing page?"</b>
+          </div>
+          <div class="memory-entry">
+            <small>OPENSITE RESPONSE · 6 MEMORIES RECALLED</small>
+            <b>"Based on EXP-201 and EXP-210: Keep monthly billing default (indie developers resist forced annual). Add a '20% annual savings' callout pill. Use 'Deploy with 1-Click (No Credit Card)' CTA, which lifted conversions by 67.8% in October. Avoid enterprise tiering — your developer audience converts 3.2x better with self-serve options."</b>
+            <div class="delta">✓ Evidence-backed · Cites past experiments · Learns preferences</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ CTA Banner ══ -->
+    <section class="wrap">
+      <div class="cta-banner reveal">
+        <div class="eyebrow">Open source · Self-hostable · Free to deploy</div>
+        <h2>The best growth dashboard<br>remembers <span>what happened before.</span></h2>
+        <p>Deploy OpenSite, connect your first data source, and start building a growth memory that compounds with every experiment.</p>
+        <div class="cta-actions">
+          <a class="btn btn-primary" href="https://share.streamlit.io/deploy?repository=mallikarjunr444-gif%2FOpenSite&branch=main&mainModule=app%2Fmain.py">Deploy on Streamlit Cloud ↗</a>
+          <a class="btn btn-ghost" href="https://github.com/mallikarjunr444-gif/OpenSite#readme">Self-host from GitHub ↗</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ Tech Stack ══ -->
+    <div class="wrap reveal">
+      <div class="stack">
+        <span>🧠 Hindsight Memory</span>
+        <span class="sep">·</span>
+        <span>🐍 Python + FastAPI</span>
+        <span class="sep">·</span>
+        <span>🎨 Streamlit UI</span>
+        <span class="sep">·</span>
+        <span>⚡ Groq / OpenAI LLMs</span>
+        <span class="sep">·</span>
+        <span>🔒 Read-only integrations</span>
+      </div>
+    </div>
   </main>
-  <footer class="wrap"><span>© 2026 OpenSite · SEO & Conversion Intelligence</span><span><a href="https://github.com/mallikarjunr444-gif/OpenSite#readme">Documentation</a> · <a href="https://github.com/mallikarjunr444-gif/OpenSite">GitHub repository ↗</a></span></footer>
+
+  <!-- ══ Footer ══ -->
+  <footer class="wrap">
+    <span>© 2026 OpenSite · SEO & Conversion Intelligence Agent</span>
+    <span>
+      <a href="https://github.com/mallikarjunr444-gif/OpenSite#readme">Documentation</a> ·
+      <a href="https://github.com/mallikarjunr444-gif/OpenSite">GitHub ↗</a> ·
+      <a href="https://hindsight.vectorize.io/">Hindsight ↗</a>
+    </span>
+  </footer>
+
+  <!-- ══ Scroll reveal ══ -->
+  <script>
+    {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+              observer.unobserve(entry.target);
+            }
+          }
+        },
+        { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
+      );
+      document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    }
+  </script>
 </body>
 </html>
