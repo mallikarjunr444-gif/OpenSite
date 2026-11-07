@@ -92,11 +92,51 @@ class LocalMemoryStore:
         return list(self.banks)
 
 
+class FirestoreMemoryStore:
+    """Firestore-backed memory for deployed instances with a stable database."""
+
+    def __init__(self):
+        from google.cloud import firestore
+        self.client=firestore.Client(project=os.getenv("GOOGLE_CLOUD_PROJECT") or None)
+        self.collection=self.client.collection(os.getenv("OPENSITE_FIRESTORE_COLLECTION","opensite_memories"))
+
+    def retain(self, bank_id: str, content: str, timestamp: Optional[str] = None,
+               tags: Optional[List[str]] = None, metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        item={"id":f"mem_{uuid.uuid4().hex}","bank_id":bank_id,"content":content,
+              "timestamp":timestamp or datetime.datetime.now(datetime.timezone.utc).isoformat(),
+              "tags":tags or [],"metadata":metadata or {}}
+        self.collection.document(item["id"]).set(item)
+        return {"status":"retained_firestore","id":item["id"],"bank_id":bank_id}
+
+    def get_all(self, bank_id: str) -> List[Dict[str, Any]]:
+        rows=[doc.to_dict() for doc in self.collection.where("bank_id","==",bank_id).stream()]
+        return sorted(rows,key=lambda item:item.get("timestamp", ""))
+
+    def recall(self, bank_id: str, query: str, tags: Optional[List[str]] = None, limit: int = 6) -> List[Dict[str, Any]]:
+        scorer=object.__new__(LocalMemoryStore)
+        scorer.banks={bank_id:self.get_all(bank_id)}
+        return LocalMemoryStore.recall(scorer,bank_id,query,tags,limit)
+
+    def reflect(self, bank_id: str, query: str) -> str:
+        scorer=object.__new__(LocalMemoryStore)
+        scorer.banks={bank_id:self.get_all(bank_id)}
+        return LocalMemoryStore.reflect(scorer,bank_id,query)
+
+    def list_banks(self) -> List[str]:
+        return sorted({doc.to_dict().get("bank_id","") for doc in self.collection.stream()} - {""})
+
+
 class HindsightManager:
     """Use local durable memory and mirror writes/queries to Hindsight when configured."""
 
     def __init__(self):
-        self.local_store = LocalMemoryStore()
+        self.local_store: Any = LocalMemoryStore()
+        if os.getenv("OPENSITE_MEMORY_BACKEND","local").lower()=="firestore":
+            try:
+                self.local_store=FirestoreMemoryStore()
+                logger.info("OpenSite memory is using Firestore.")
+            except Exception as exc:
+                logger.error("Firestore memory could not initialize; using local file memory: %s",exc)
         self.client: Optional[Any] = None
         if HINDSIGHT_SDK_AVAILABLE and settings.HINDSIGHT_API_KEY:
             try:
