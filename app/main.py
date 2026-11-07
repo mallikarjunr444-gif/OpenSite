@@ -424,6 +424,29 @@ elif page == "Content intelligence":
             with col_b:
                 st.markdown("#### Extracted text sample")
                 st.caption(selected_page.get("text_sample", "")[:1000] or "No visible text captured")
+            st.markdown("#### Queries bringing visitors to this page")
+            st.caption("Optional: query Search Console for this exact page. Requires a verified property and a read-only OAuth token.")
+            with st.form("content_page_queries"):
+                page_query_property = st.text_input("Search Console property", value=site["domain"], key=property_state_key("content_gsc_property", site_id))
+                page_query_token = st.text_input("OAuth access token", type="password", key=property_state_key("content_gsc_token", site_id))
+                page_query_days = st.selectbox("Date range", [28, 90], format_func=lambda days: f"Last {days} days", key=property_state_key("content_gsc_days", site_id))
+                fetch_page_queries = st.form_submit_button("Fetch page queries", type="primary")
+            if fetch_page_queries:
+                if not page_query_token.strip():
+                    st.error("Enter an OAuth access token with webmasters.readonly access.")
+                else:
+                    try:
+                        result = integrations.search_console_page_queries(page_query_token.strip(), page_query_property.strip(), selected_url, page_query_days)
+                        st.session_state[property_state_key("content_gsc_result", site_id)] = result
+                    except Exception as exc:
+                        st.error(f"Search Console page query failed: {exc}")
+            page_query_result = st.session_state.get(property_state_key("content_gsc_result", site_id))
+            if page_query_result and page_query_result.get("page") == selected_url:
+                st.caption(f"{page_query_result['provider']} · {page_query_result['range']} · exact page filter")
+                st.dataframe(pd.DataFrame(page_query_result["rows"]), use_container_width=True, hide_index=True)
+                if st.button("Save page query snapshot", key=property_state_key("save_content_gsc_result", site_id)):
+                    remember_import(site_id, "Google Search Console · Page queries", f"Search queries for {selected_url} ({page_query_result['range']})", page_query_result["rows"])
+                    st.success("Page query snapshot saved to property memory.")
             if st.button("Save content crawl snapshot"):
                 remember_import(site_id, "OpenSite Content Intelligence", f"Analyzed structure of {len(pages)} pages", page_df.to_dict("records"))
                 st.success("Content snapshot saved to property memory.")

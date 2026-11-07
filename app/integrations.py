@@ -48,6 +48,26 @@ def search_console_queries(access_token: str, property_url: str, days: int = 28)
     return {"provider":"Google Search Console","range":f"{start} – {end}","rows":[{"query":row.get("keys",[""])[0],"clicks":row.get("clicks",0),"impressions":row.get("impressions",0),"ctr":row.get("ctr",0),"position":row.get("position",0)} for row in rows]}
 
 
+def search_console_page_queries(access_token: str, property_url: str, page_url: str, days: int = 28) -> Dict[str, Any]:
+    """Return Search Console queries that generated impressions for one page."""
+    end = date.today() - timedelta(days=3)
+    start = end - timedelta(days=days - 1)
+    url = f"https://www.googleapis.com/webmasters/v3/sites/{quote(property_url, safe='')}/searchAnalytics/query"
+    body = {
+        "startDate": start.isoformat(), "endDate": end.isoformat(),
+        "dimensions": ["query"], "rowLimit": 1000, "dataState": "final",
+        "dimensionFilterGroups": [{"groupType": "and", "filters": [
+            {"dimension": "page", "operator": "equals", "expression": page_url}
+        ]}],
+    }
+    rows = _request("POST", url, token=access_token, json=body).get("rows", [])
+    return {"provider": "Google Search Console", "page": page_url,
+            "range": f"{start} – {end}",
+            "rows": [{"query": row.get("keys", [""])[0], "clicks": row.get("clicks", 0),
+                      "impressions": row.get("impressions", 0), "ctr": row.get("ctr", 0),
+                      "position": row.get("position", 0)} for row in rows]}
+
+
 def ga4_report(access_token: str, property_id: str, days: int = 28) -> Dict[str, Any]:
     url = f"https://analyticsdata.googleapis.com/v1beta/properties/{quote(property_id, safe='')}:runReport"
     body = {"dateRanges": [{"startDate": f"{days}daysAgo", "endDate": "yesterday"}],

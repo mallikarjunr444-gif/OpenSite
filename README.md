@@ -60,7 +60,7 @@ All analytics connectors are read-only. OpenSite does not receive private accoun
 
 | Source | OpenSite uses | Access needed |
 | --- | --- | --- |
-| Google Search Console | Clicks, impressions, CTR, position, and query rows | OAuth token with `webmasters.readonly` and verified property access |
+| Google Search Console | Clicks, impressions, CTR, position, query rows, and per-page query performance | OAuth token with `webmasters.readonly` and verified property access |
 | Google Analytics 4 | Sessions, users, conversion events | OAuth token with `analytics.readonly` and GA4 property access |
 | SerpBear | Tracked keywords and saved position history | SerpBear URL and API key |
 | Plausible, PostHog, Umami, Matomo | Analytics summaries and events | Provider API key/token and site/project ID |
