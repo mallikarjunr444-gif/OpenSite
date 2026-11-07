@@ -1,61 +1,103 @@
-# OpenSite
+<p align="center">
+  <img src="assets/opensite-logo.svg" alt="OpenSite" width="720" />
+</p>
 
-**SEO & Conversion Intelligence Agent for Growth & Marketing teams.** OpenSite remembers ranking history, landing page experiments, content performance, and algorithm updates so teams can learn which changes actually improve search visibility and conversion.
+<h1 align="center">OpenSite</h1>
+<p align="center"><strong>SEO & Conversion Intelligence Agent</strong><br />Understand. Optimize. Grow.</p>
 
-## Run OpenSite
+OpenSite is a growth intelligence workspace for marketing teams. It brings search visibility, website health, analytics, content performance, and experiment outcomes into one history, then uses that evidence to help decide what to improve next.
+
+## What OpenSite does
+
+- **Growth overview:** review saved site signals and ask the advisor questions grounded in that history.
+- **Website auditor:** crawl a public site, respect `robots.txt`, and flag missing or duplicate metadata, heading issues, and images without alt text. Audit results become memories.
+- **Keyword rankings:** import query metrics from Google Search Console or position history from SerpBear.
+- **Analytics connections:** read metrics from GA4, Plausible, PostHog, Umami, and Matomo.
+- **Experiments:** record hypotheses and outcomes; import experiment records from GrowthBook.
+- **Search updates:** view Google Search Central announcements alongside a site's history. Timing indicates context, not cause.
+- **Performance:** run PageSpeed Insights and import Chrome UX Report field metrics.
+- **Historical memory:** search saved audits, analytics snapshots, ranking history, and team-entered experiments.
+
+## Quick start
+
+Python 3.12 is used by the deployment container. From the repository root:
 
 ```bash
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
-pip install streamlit pandas pydantic python-dotenv
+pip install -r requirements.txt
 streamlit run app/main.py
 ```
 
-This repository includes a `venv` directory in some development environments. If it is already set up, run `./venv/bin/streamlit run app/main.py`.
+In the app, choose **Add your website** in the sidebar, then open **Data connections** to authorize providers. Demo properties and history are examples; add your own site before using any data for reporting.
 
-## Deploy to Firebase
+## How memory works
 
-The Python/Streamlit app runs as a container on Cloud Run; Firebase Hosting provides the public HTTPS URL and routes requests to that service. Install the Firebase CLI and Google Cloud CLI, select a Firebase project you control, then:
+OpenSite gives each property its own memory bank. A successful data import, crawl, or manually recorded experiment is stored with its date, source tags, and metadata. Search and the growth advisor retrieve relevant memories before responding. Recommendations should distinguish observed changes from hypotheses; a ranking change near an algorithm update is correlation, not proof of causation.
+
+The default local backend stores memory in `app/data/memories.json`, so it survives local app restarts. For a deployed service, use Firestore by setting `OPENSITE_MEMORY_BACKEND=firestore`; the Cloud Run service account needs Firestore access. The Firestore collection defaults to `opensite_memories`. Hindsight can also be enabled as an optional remote memory service by installing `hindsight-client` and setting `HINDSIGHT_BASE_URL` and `HINDSIGHT_API_KEY`. OpenSite keeps local/Firestore memory as its data source and mirrors writes to Hindsight when configured.
+
+For generated natural-language synthesis, run Ollama locally, pull a model such as `qwen2.5:7b`, and set `OLLAMA_ENABLED=true`, `OLLAMA_BASE_URL`, and `OLLAMA_MODEL`. Without Ollama, the advisor presents relevant stored evidence without claiming to run an LLM.
+
+## Connectors and credentials
+
+All analytics connectors are read-only. OpenSite does not receive private account data until the site owner supplies credentials and grants property access.
+
+| Source | OpenSite uses | Access needed |
+| --- | --- | --- |
+| Google Search Console | Clicks, impressions, CTR, position, and query rows | OAuth token with `webmasters.readonly` and verified property access |
+| Google Analytics 4 | Sessions, users, conversion events | OAuth token with `analytics.readonly` and GA4 property access |
+| SerpBear | Tracked keywords and saved position history | SerpBear URL and API key |
+| Plausible, PostHog, Umami, Matomo | Analytics summaries and events | Provider API key/token and site/project ID |
+| GrowthBook | Existing experiment records | Read-only GrowthBook API key |
+| PageSpeed Insights | Lighthouse performance, SEO, and accessibility audits | Normally no key for personal use; quotas apply |
+| Chrome UX Report | Aggregated real-user Core Web Vitals | Google Cloud API key with CrUX API enabled |
+| Google Search Central | Official search announcements | Public RSS feed |
+
+Credentials entered in the Streamlit UI remain in that browser session and are not written to the memory bank. Google OAuth access tokens expire and must be refreshed. External SERP positions, search-volume estimates, and backlink indexes need a separately configured data provider; open-source software alone cannot supply those datasets.
+
+## Run with `.env`
+
+Copy `.env.example` to `.env` for local options. Do not commit `.env` or provider keys.
 
 ```bash
-firebase use <your-firebase-project-id>
-firebase hosting:sites:create opensite
-firebase target:apply hosting opensite opensite
-gcloud run deploy opensite --source . --region us-central1 --allow-unauthenticated --port 8080
-firebase deploy --only hosting
+cp .env.example .env
 ```
 
-The local JSON memory store is not durable on Cloud Run because its container filesystem is ephemeral. Configure Firestore (`OPENSITE_MEMORY_BACKEND=firestore`) or Hindsight Cloud before relying on deployed memory; do not treat a Cloud Run instance's local file as a backup. Set `OPENSITE_ACCESS_PASSWORD` as a Cloud Run secret for the optional shared-password gate. Configure secrets with Google Secret Manager/Cloud Run environment variables, never commit `.env` or credentials.
+`OPENSITE_ACCESS_PASSWORD` enables an optional shared-password gate for a public deployment. It is unset locally by default. For deployed secrets, prefer Google Secret Manager over checked-in files or plain-text shell history.
 
-## What it does
+## Firebase deployment
 
-- **Overview:** review site baselines, historical signals, recent changes, and recall-based recommendations.
-- **SEO audit:** crawl public same-host pages, respect `robots.txt`, check titles, descriptions, headings, canonical links, image alt text, and store timestamped audit snapshots.
-- **Keyword rankings:** fetch Search Console query performance or position history from a connected SerpBear instance.
-- **Experiments:** inspect A/B and content experiments, filter by type, and record new hypotheses and outcomes.
-- **Rankings & updates:** keep search ranking, technical SEO, and algorithm update history alongside content results.
-- **Memory bank:** search the site's durable history and review the records that inform OpenSite's answers.
+OpenSite's Python/Streamlit server runs on Cloud Run; Firebase Hosting routes its HTTPS requests to the container. The repository is configured for Firebase project `opensite-growth-mr444`, Hosting site `opensite-growth-mr444-hosting`, and Cloud Run service `opensite` in `us-central1`.
 
-The Overview's growth advisor retrieves relevant history first. To enable generated local synthesis, install Ollama, pull a model such as `qwen2.5:7b`, and set `OLLAMA_ENABLED=true`, `OLLAMA_BASE_URL`, and `OLLAMA_MODEL` in `.env`. Without Ollama, it returns matching stored evidence without inventing a generated answer.
+The project and Hosting site have been created. Cloud Run requires an active billing account even when staying within its free quota. After linking one to this Firebase project and enabling the Cloud Run, Cloud Build, Artifact Registry, and Firestore APIs:
+
+1. Create a Secret Manager secret named `opensite-access-password` containing a strong password, then grant the Cloud Run service account access to that secret.
+2. Configure `OPENSITE_MEMORY_BACKEND=firestore` and grant the service account Firestore access.
+3. Deploy from the repository root:
+
+```bash
+gcloud config set project opensite-growth-mr444
+gcloud run deploy opensite --source . --project opensite-growth-mr444 --region us-central1 --allow-unauthenticated --port 8080 --min 0 --max 2 --memory 1Gi --set-env-vars OPENSITE_MEMORY_BACKEND=firestore --set-secrets OPENSITE_ACCESS_PASSWORD=opensite-access-password:latest
+firebase deploy --only hosting --project opensite-growth-mr444
+```
+
+Cloud Run requires a billing account even though it has a free usage quota. Usage beyond included quotas can be billed. Firebase Hosting by itself only serves static content; it cannot run this Python app.
 
 ## Current scope
 
-This is a runnable local-first product foundation. Live data requires the site's owner to configure provider credentials and property access. Scheduled polling, account authentication, a multi-user PostgreSQL deployment, full local map rendering, automated competitor SERP/backlink analysis, and direct GrowthBook experiment creation/management are not implemented in this version. SERP and competitor datasets generally require a separately configured provider. Search update timing is contextual and should not be treated as proof of cause.
+Implemented now: Streamlit workspace, local and Firestore memory backends, optional Hindsight mirroring, user-added sites, technical crawler, Search Console/SerpBear rankings, analytics and GrowthBook imports, PageSpeed/CrUX, official search update feed, and optional Ollama synthesis.
 
-OpenSite keeps local memories in `app/data/memories.json`. They persist across restarts. If the Hindsight SDK and `HINDSIGHT_API_KEY` are configured, OpenSite also mirrors writes and uses remote recall, with local fallback when remote access is unavailable.
+Still requiring additional implementation or provider configuration: scheduled sync and alerts, user accounts and team permissions, a full PostgreSQL/pgvector migration, map rendering/local pack rank tracking, automated competitor SERP/backlink research, and direct GrowthBook experiment creation/management. SERP and competitor datasets may require a separately configured provider. Review third-party licenses before redistributing integrated services.
 
-For Firebase/Cloud Run, set `OPENSITE_MEMORY_BACKEND=firestore` and grant the Cloud Run service account Firestore access. Memory and imported snapshots then live in the Firestore `opensite_memories` collection rather than the container filesystem. The default local backend remains a JSON file for development.
+## Project layout
 
-Add your property from the sidebar before connecting private data. Custom properties are stored in `app/data/sites.json`; their metrics are blank until you import or record real data.
-
-## Live data connections
-
-Open **Data connections** in the app to make read-only requests to Google Search Console, Google Analytics 4, Plausible, PostHog, Umami, Matomo, GrowthBook, Chrome UX Report, or Google's PageSpeed Insights. Use **Keyword rankings** for Search Console query metrics or SerpBear position history. Google Search Console and GA4 use OAuth access tokens; the other analytics providers use their API keys or read-only tokens. PageSpeed Insights can run without a key at normal personal usage.
-
-The user supplies valid provider credentials and grants property access; OpenSite cannot connect to private analytics accounts without them. Credentials entered in the app stay in the current Streamlit browser session and are not saved to the memory bank. A successful pull stores a timestamped metrics snapshot in the selected site's memory bank so OpenSite can build history over repeated imports. For ongoing production ingestion, configure Streamlit behind HTTPS and add a managed secrets vault or OAuth authorization flow. Google access tokens expire, so the current UI requires a fresh token when needed.
-
-OpenSite's analytics connectors are read-only. GrowthBook experiment records can be imported; otherwise use the Experiments form. Live conversion rates require a GA4/Plausible/PostHog/Matomo goal or event configured in that provider. The built-in crawler limits scope to public pages on the entered host, caps a crawl at 100 pages, and skips URLs disallowed by `robots.txt`. The update monitor reads Google's official Search Central RSS feed and presents announcements as context, not proof of causality.
-
-`app/seed_seo_data.py` remains as illustrative history for the demo sites. Treat those seeded values as examples; live connectors return separate provider data and do not silently replace the demo history.
-
-Copy `.env.example` to `.env` to configure Hindsight or model credentials. Do not commit secret keys.
+```text
+app/                 Streamlit UI, connectors, crawler, and memory
+assets/              OpenSite brand assets
+public/              Firebase Hosting assets
+Dockerfile           Cloud Run container
+firebase.json        Firebase Hosting rewrite to Cloud Run
+.firebaserc          OpenSite Firebase project and Hosting target
+.env.example         Local configuration template
+```
