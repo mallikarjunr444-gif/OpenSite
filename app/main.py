@@ -2,9 +2,15 @@
 import html
 import hmac
 import os
+import sys
 import uuid
 from datetime import datetime
 from email.utils import parsedate_to_datetime
+from pathlib import Path
+
+PROJECT_ROOT = str(Path(__file__).resolve().parent.parent)
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
 import pandas as pd
 import streamlit as st
