@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenSite — Interactive Video Presentation & Live Demo Studio</title>
+<style>
+  :root {
+    --bg: #090a08;
+    --panel: #12130f;
+    --panel-hi: #171812;
+    --line: #282923;
+    --lime: #d5ff82;
+    --white: #f4f4f1;
+    --muted: #85867f;
+    --text-mut: #b4b5ad;
+    --cyan: #82e6ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--white);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .brand {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .dot { width: 10px; height: 10px; background: var(--lime); border-radius: 50%; }
+  .badge {
+    background: #18200f;
+    border: 1px solid #485d2e;
+    color: var(--lime);
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 99px;
+    font-family: monospace;
+    letter-spacing: 0.1em;
+  }
+  .container {
+    max-width: 1440px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 24px 32px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  .video-stage {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+  }
+  .slide-display {
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  .slide-display img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  .controls-bar {
+    background: var(--panel-hi);
+    border-top: 1px solid var(--line);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .btn-group { display: flex; align-items: center; gap: 10px; }
+  button {
+    background: #1d2115;
+    border: 1px solid #37392f;
+    color: var(--white);
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+  button:hover {
+    background: var(--lime);
+    color: #0b0c09;
+    border-color: var(--lime);
+  }
+  button.primary {
+    background: var(--lime);
+    color: #0b0c09;
+    border-color: var(--lime);
+  }
+  .progress-container {
+    flex: 1;
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .progress-bar {
+    height: 6px;
+    background: #282923;
+    border-radius: 3px;
+    overflow: hidden;
+    cursor: pointer;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--lime);
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+  .timer {
+    font-family: monospace;
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+  }
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 24px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 24px;
+  }
+  .card-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card-sub { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+  .teleprompter-box {
+    background: #090a08;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 20px;
+    font-size: 17px;
+    line-height: 1.6;
+    color: var(--white);
+    min-height: 140px;
+    border-left: 3px solid var(--lime);
+  }
+  .timeline-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 380px;
+    overflow-y: auto;
+  }
+  .timeline-item {
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: var(--panel-hi);
+    border: 1px solid var(--line);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .timeline-item:hover, .timeline-item.active {
+    border-color: var(--lime);
+    background: #18200f;
+  }
+  .timeline-item-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    font-family: monospace;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .timeline-item.active .timeline-item-header { color: var(--lime); }
+  .timeline-item-title { font-size: 14px; font-weight: 600; color: var(--white); }
+  .code-block {
+    background: #090a08;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: 12px;
+    color: var(--text-mut);
+    overflow-x: auto;
+    margin-top: 12px;
+  }
+  .kw-lime { color: var(--lime); font-weight: bold; }
+  .kw-cyan { color: var(--cyan); }
+  .pill-tag {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-family: monospace;
+    margin-top: 8px;
+    background: #14170e;
+    color: var(--lime);
+    border: 1px solid #37471e;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="dot"></div>
+    <span>OpenSite</span>
+    <span style="font-size: 14px; color: var(--muted); font-weight: 500;">Product Presentation & Demo Studio</span>
+  </div>
+  <div class="btn-group">
+    <span class="badge">HINDSIGHT PERSISTENT MEMORY</span>
+    <a href="OpenSite_Demo_Video.mp4" download style="text-decoration:none;">
+      <button class="primary">⬇ Download MP4 Video (1080p)</button>
+    </a>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Interactive Slide Stage -->
+  <div class="video-stage">
+    <div class="slide-display">
+      <img id="slideImg" src="video_assets/frames/frame_01.png" alt="OpenSite Slide Frame">
+    </div>
+    <div class="controls-bar">
+      <div class="btn-group">
+        <button id="prevBtn" onclick="prevSlide()">◀ Previous</button>
+        <button id="playBtn" class="primary" onclick="togglePlay()">▶ Play Presentation</button>
+        <button id="nextBtn" onclick="nextSlide()">Next ▶</button>
+        <button id="ttsBtn" onclick="toggleSpeech()">🎙 Read Script Aloud</button>
+      </div>
+
+      <div class="progress-container">
+        <div class="progress-bar" onclick="seek(event)">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="timer">
+          <span id="sceneBadge">SCENE 01 · INTRODUCTION</span>
+          <span id="timeDisplay">0:00 / 4:38</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <!-- Teleprompter Narration Card -->
+    <div class="card">
+      <div class="card-title">
+        <span>🎙 Presenter Teleprompter & Live Narration</span>
+        <span class="badge" id="slideIndicator">Slide 1 of 17</span>
+      </div>
+      <div class="card-sub">Mallikarjun · OpenSite Creator</div>
+      <div class="teleprompter-box" id="teleprompterText">
+        "Hello everyone! I'm Mallikarjun, and today I'm introducing OpenSite, an SEO and Conversion Intelligence Agent."
+      </div>
+      
+      <div style="margin-top: 20px;">
+        <div class="card-title" style="font-size:14px;">⚡ Live Hindsight Interactive Demonstration</div>
+        <div class="card-sub">Click to execute live persistent memory operations</div>
+        <div class="btn-group" style="margin-bottom: 12px;">
+          <button onclick="runDemoRetain()">Execute Hindsight retain()</button>
+          <button onclick="runDemoRecall()">Execute Hindsight recall()</button>
+        </div>
+        <div id="demoOutput" class="code-block" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- Scene Breakdown & Navigation -->
+    <div class="card">
+      <div class="card-title">
+        <span>🎬 7-Scene Video Storyboard</span>
+        <span class="badge">4–5 MIN DEMO</span>
+      </div>
+      <div class="card-sub">Select any slide or scene to jump immediately</div>
+      
+      <div class="timeline-list" id="timelineList"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const slides = [
+  { id: 1, file: "frame_01.png", scene: "SCENE 01 · 0:00–0:15", title: "OpenSite Hero & Introduction", dur: 15, text: "Hello everyone! I'm Mallikarjun, and today I'm introducing OpenSite, an SEO and Conversion Intelligence Agent." },
+  { id: 2, file: "frame_02.png", scene: "SCENE 01 · 0:15–0:30", title: "Why OpenSite Exists & Overview", dur: 15, text: "OpenSite is designed to help website owners understand their website performance, improve search engine visibility, analyze visitor behaviour, and make better growth decisions. Our goal is to bring website intelligence and AI-driven recommendations together in one unified platform." },
+  { id: 3, file: "frame_03.png", scene: "SCENE 02 · 0:30–0:55", title: "The Four Growth Bottlenecks", dur: 22, text: "Today, businesses face several challenges when managing their online presence. First, understanding website performance requires analyzing information from multiple areas: SEO, keyword rankings, website health, content performance, and visitor behaviour. Second, identifying an issue is only the beginning. Third, conventional tools focus only on current data. And finally, businesses need actionable recommendations." },
+  { id: 4, file: "frame_04.png", scene: "SCENE 02 · 0:55–1:15", title: "The Core Problem Formulation", dur: 23, text: "This creates an important problem: how can we build an AI agent that continuously understands a website's performance, remembers its previous changes, and helps improve its growth over time?" },
+  { id: 5, file: "frame_05.png", scene: "SCENE 03 · 1:15–1:30", title: "Introducing OpenSite Architecture", dur: 15, text: "To address these challenges, we developed OpenSite. OpenSite brings multiple website growth capabilities into one platform: SEO intelligence, keyword analysis, technical website auditing, content optimization, competitor intelligence, conversion analysis, and local SEO." },
+  { id: 6, file: "frame_06.png", scene: "SCENE 03 · 1:30–1:45", title: "The Persistent Memory Differentiator", dur: 15, text: "But what makes OpenSite different is its focus on persistent intelligence. It doesn't just analyze what is happening today. It is designed to remember relevant previous analyses and use that information when generating future recommendations." },
+  { id: 7, file: "frame_07.png", scene: "SCENE 04 · 1:45–2:05", title: "The 12 Core Capabilities Matrix", dur: 20, text: "Let's explore the major capabilities of OpenSite. First, SEO Intelligence. Second, Keyword Intelligence. Third, Website Audit. Fourth, Content Intelligence. Fifth, Competitor Intelligence. Sixth, Conversion Intelligence. Seventh, Local SEO and Maps. And finally, the AI Growth Agent connects these capabilities." },
+  { id: 8, file: "frame_08.png", scene: "SCENE 04 · 2:05–2:25", title: "Technical Audit & Keyword Rankings", dur: 20, text: "First, SEO Intelligence analyzes search performance and identifies opportunities. Second, Keyword Intelligence monitors ranking changes. Third, Website Audit identifies technical issues, broken links, and metadata opportunities." },
+  { id: 9, file: "frame_09.png", scene: "SCENE 04 · 2:25–2:45", title: "Conversion & Experiment Intelligence", dur: 20, text: "Sixth, Conversion Intelligence helps understand visitor behaviour, conversion performance and landing page effectiveness. Finally, the AI Growth Agent connects these capabilities and turns available data into useful recommendations." },
+  { id: 10, file: "frame_10.png", scene: "SCENE 05 · 2:45–3:00", title: "Hindsight Dual-Tier Architecture", dur: 15, text: "Now comes one of the most important parts of OpenSite: persistent AI memory. We use Hindsight to give our AI agent the ability to retain and recall relevant information from previous interactions." },
+  { id: 11, file: "frame_11.png", scene: "SCENE 05 · 3:00–3:22", title: "Live Demo: Retain Operation", dur: 22, text: "For example, imagine OpenSite analyzes a website and recommends improving its page title. The agent can retain information about that analysis and recommendation. Let's demonstrate this retain operation." },
+  { id: 12, file: "frame_12.png", scene: "SCENE 05 · 3:22–3:45", title: "Live Demo: Recall Operation", dur: 23, text: "Now let's perform a recall operation. As you can see, the agent can use previously retained information to answer a follow-up question. This allows OpenSite to build on previous interactions instead of treating every analysis as an isolated task." },
+  { id: 13, file: "frame_13.png", scene: "SCENE 05 · 3:40–3:45", title: "Why Memory Transforms OpenSite", dur: 15, text: "This allows OpenSite to build on previous interactions instead of treating every analysis as an isolated task. Hindsight makes OpenSite truly continuous." },
+  { id: 14, file: "frame_14.png", scene: "SCENE 06 · 3:45–4:05", title: "Compounding Growth Timeline", dur: 20, text: "With historical information and current website performance, OpenSite aims to help businesses make more informed growth decisions. For example, it can compare previous SEO recommendations with subsequent performance, review ranking changes, and identify areas needing attention." },
+  { id: 15, file: "frame_15.png", scene: "SCENE 06 · 4:05–4:20", title: "Closed-Loop AI Growth Advisor", dur: 15, text: "The long-term vision is to create an agent that understands a website's growth journey and continuously helps users discover opportunities for improvement." },
+  { id: 16, file: "frame_16.png", scene: "SCENE 07 · 4:20–4:35", title: "Understand. Optimize. Grow.", dur: 15, text: "To conclude, OpenSite is our approach to making website optimization more intelligent, continuous and data-driven. By combining SEO and conversion intelligence with persistent AI memory through Hindsight, we aim to build an agent that doesn't simply analyze websites but also learns from their history." },
+  { id: 17, file: "frame_17.png", scene: "SCENE 07 · 4:35–4:48", title: "Thank You & Project Showcase", dur: 13, text: "Thank you for watching. This is OpenSite. Understand. Optimize. Grow." }
+];
+
+let curIdx = 0;
+let isPlaying = false;
+let playTimer = null;
+let speechSynth = window.speechSynthesis;
+
+function renderTimeline() {
+  const container = document.getElementById("timelineList");
+  container.innerHTML = "";
+  slides.forEach((s, idx) => {
+    const item = document.createElement("div");
+    item.className = "timeline-item" + (idx === curIdx ? " active" : "");
+    item.onclick = () => goToSlide(idx);
+    item.innerHTML = `
+      <div class="timeline-item-header">
+        <span>${s.scene}</span>
+        <span>${s.dur}s</span>
+      </div>
+      <div class="timeline-item-title">${idx+1}. ${s.title}</div>
+    `;
+    container.appendChild(item);
+  });
+}
+
+function updateView() {
+  const s = slides[curIdx];
+  document.getElementById("slideImg").src = "video_assets/frames/" + s.file;
+  document.getElementById("teleprompterText").innerText = `"${s.text}"`;
+  document.getElementById("sceneBadge").innerText = s.scene + " · " + s.title.toUpperCase();
+  document.getElementById("slideIndicator").innerText = `Slide ${curIdx+1} of ${slides.length}`;
+  
+  let elapsed = 0;
+  for (let i = 0; i < curIdx; i++) elapsed += slides[i].dur;
+  const total = slides.reduce((acc, x) => acc + x.dur, 0);
+  const pct = (elapsed / total) * 100;
+  document.getElementById("progressFill").style.width = pct + "%";
+  
+  const m = Math.floor(elapsed / 60);
+  const sec = elapsed % 60;
+  const tm = Math.floor(total / 60);
+  const tsec = total % 60;
+  document.getElementById("timeDisplay").innerText = `${m}:${sec < 10 ? '0' : ''}${sec} / ${tm}:${tsec < 10 ? '0' : ''}${tsec}`;
+  
+  renderTimeline();
+}
+
+function goToSlide(idx) {
+  curIdx = idx;
+  updateView();
+  if (isPlaying) {
+    clearTimeout(playTimer);
+    scheduleNext();
+  }
+}
+
+function prevSlide() {
+  if (curIdx > 0) goToSlide(curIdx - 1);
+}
+
+function nextSlide() {
+  if (curIdx < slides.length - 1) goToSlide(curIdx + 1);
+  else pause();
+}
+
+function scheduleNext() {
+  playTimer = setTimeout(() => {
+    if (curIdx < slides.length - 1) {
+      curIdx++;
+      updateView();
+      scheduleNext();
+    } else {
+      pause();
+    }
+  }, slides[curIdx].dur * 1000);
+}
+
+function togglePlay() {
+  if (isPlaying) pause();
+  else play();
+}
+
+function play() {
+  isPlaying = true;
+  document.getElementById("playBtn").innerText = "⏸ Pause";
+  scheduleNext();
+}
+
+function pause() {
+  isPlaying = false;
+  clearTimeout(playTimer);
+  document.getElementById("playBtn").innerText = "▶ Play Presentation";
+}
+
+function seek(e) {
+  const rect = e.currentTarget.getBoundingClientRect();
+  const ratio = (e.clientX - rect.left) / rect.width;
+  const total = slides.reduce((acc, x) => acc + x.dur, 0);
+  let target = ratio * total;
+  let accum = 0;
+  for (let i = 0; i < slides.length; i++) {
+    accum += slides[i].dur;
+    if (accum >= target) {
+      goToSlide(i);
+      break;
+    }
+  }
+}
+
+function toggleSpeech() {
+  if (speechSynth.speaking) {
+    speechSynth.cancel();
+    document.getElementById("ttsBtn").innerText = "🎙 Read Script Aloud";
+    return;
+  }
+  const s = slides[curIdx];
+  const utter = new SpeechSynthesisUtterance(s.text);
+  utter.rate = 1.0;
+  utter.pitch = 1.0;
+  utter.onend = () => {
+    document.getElementById("ttsBtn").innerText = "🎙 Read Script Aloud";
+  };
+  document.getElementById("ttsBtn").innerText = "⏹ Stop Speech";
+  speechSynth.speak(utter);
+}
+
+function runDemoRetain() {
+  const out = document.getElementById("demoOutput");
+  out.style.display = "block";
+  out.innerHTML = `<span class="kw-lime">> hindsight_mgr.retain(bank_id="opensite_io", content="[SEO RECOMMENDATION] Optimize /pricing title tag", tags=["seo", "title_optimization"])</span>\n\n` +
+    `✔ Response: {"status": "success", "id": "mem_7a8f9b2c", "bank_id": "opensite_io", "timestamp": "2026-11-07T10:20:00Z"}\n` +
+    `<span class="kw-cyan">Memory retained into persistent local store and Hindsight bank.</span>`;
+}
+
+function runDemoRecall() {
+  const out = document.getElementById("demoOutput");
+  out.style.display = "block";
+  out.innerHTML = `<span class="kw-lime">> hindsight_mgr.recall(bank_id="opensite_io", query="What improvements were previously suggested for pricing?", limit=3)</span>\n\n` +
+    `✔ Found 2 matching growth memories:\n` +
+    `1. [2026-11-07] [SEO RECOMMENDATION] Optimize /pricing title tag for high-intent queries (Score: 7.2)\n` +
+    `2. [2026-09-02] [EXP-201] Pricing Headline & Toggle: Keep monthly default with 20% pill (Score: 5.4)\n\n` +
+    `<span class="kw-cyan">Synthesis: OpenSite recommends optimizing /pricing title and preserving monthly default billing.</span>`;
+}
+
+updateView();
+</script>
+</body>
+</html>
