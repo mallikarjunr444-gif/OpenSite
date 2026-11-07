@@ -82,11 +82,15 @@ gcloud run deploy opensite --source . --project opensite-growth-mr444 --region u
 firebase deploy --only hosting --project opensite-growth-mr444
 ```
 
-Cloud Run requires a billing account even though it has a free usage quota. Usage beyond included quotas can be billed. Firebase Hosting by itself only serves static content; it cannot run this Python app.
+Cloud Run requires an open billing account even though it has a free usage quota. The Google Cloud account available during setup had a closed billing account, so the Cloud Run service and Firebase Hosting rewrite are configured but not deployed. Reactivate/link an open billing account before running the commands above. Usage beyond included quotas can be billed. Firebase Hosting by itself only serves static content; it cannot run this Python app.
+
+## GitHub Pages project site
+
+The repository includes a responsive static OpenSite project landing page in `docs/`. GitHub Actions publishes it from the `main` branch using `.github/workflows/deploy-pages.yml`. After pushing the workflow, enable **Settings → Pages → Build and deployment → Source: GitHub Actions** in the repository. The landing page is separate from the Streamlit application: it describes OpenSite and links to setup instructions, while interactive dashboards, API connections, and persistent memory need the Python backend deployed on Cloud Run or another server host. The expected Pages address is `https://mallikarjunr444-gif.github.io/OpenSite/` after the first successful workflow run.
 
 ## Current scope
 
-Implemented now: Streamlit workspace, local and Firestore memory backends, optional Hindsight mirroring, user-added sites, technical crawler, Search Console/SerpBear rankings, analytics and GrowthBook imports, PageSpeed/CrUX, official search update feed, and optional Ollama synthesis.
+Implemented now: Streamlit workspace, local and Firestore memory backends, optional Hindsight mirroring, user-added sites, technical crawler, crawl-based content analysis, public competitor page comparison, Search Console/SerpBear rankings, analytics and GrowthBook imports, PageSpeed/CrUX, official search update feed, optional Ollama synthesis, and a static GitHub Pages landing page.
 
 Still requiring additional implementation or provider configuration: scheduled sync and alerts, user accounts and team permissions, a full PostgreSQL/pgvector migration, map rendering/local pack rank tracking, automated competitor SERP/backlink research, and direct GrowthBook experiment creation/management. SERP and competitor datasets may require a separately configured provider. Review third-party licenses before redistributing integrated services.
 
@@ -95,6 +99,8 @@ Still requiring additional implementation or provider configuration: scheduled s
 ```text
 app/                 Streamlit UI, connectors, crawler, and memory
 assets/              OpenSite brand assets
+docs/                Static GitHub Pages project site
+.github/workflows/   Pages publishing workflow
 public/              Firebase Hosting assets
 Dockerfile           Cloud Run container
 firebase.json        Firebase Hosting rewrite to Cloud Run
