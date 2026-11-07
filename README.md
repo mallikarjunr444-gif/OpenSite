@@ -25,7 +25,7 @@ gcloud run deploy opensite --source . --region us-central1 --allow-unauthenticat
 firebase deploy --only hosting
 ```
 
-The local JSON memory store is not durable on Cloud Run because its container filesystem is ephemeral. Configure a durable memory backend before relying on deployed memory; do not treat a Cloud Run instance's local file as a backup. Configure secrets with Google Secret Manager/Cloud Run environment variables, never commit `.env` or credentials.
+The local JSON memory store is not durable on Cloud Run because its container filesystem is ephemeral. Configure Hindsight Cloud or another durable memory backend before relying on deployed memory; do not treat a Cloud Run instance's local file as a backup. Set `OPENSITE_ACCESS_PASSWORD` as a Cloud Run secret for the optional shared-password gate. Configure secrets with Google Secret Manager/Cloud Run environment variables, never commit `.env` or credentials.
 
 ## What it does
 

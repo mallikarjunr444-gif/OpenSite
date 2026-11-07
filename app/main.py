@@ -1,5 +1,7 @@
 """OpenSite growth intelligence workspace."""
 import html
+import hmac
+import os
 from datetime import datetime
 
 import pandas as pd
@@ -59,6 +61,25 @@ div[data-testid="stMetricValue"]{color:var(--white);font-size:27px;letter-spacin
 """, unsafe_allow_html=True)
 
 
+def require_access_password():
+    expected=os.getenv("OPENSITE_ACCESS_PASSWORD","")
+    if not expected or st.session_state.get("opensite_authenticated"):
+        return
+    st.markdown('<div style="max-width:420px;margin:12vh auto 0;text-align:center"><div class="brand" style="font-size:40px">OpenSite</div><div class="eyebrow" style="margin:10px 0 24px">SEO & conversion intelligence</div></div>',unsafe_allow_html=True)
+    with st.form("opensite_access"):
+        password=st.text_input("Workspace password",type="password")
+        submitted=st.form_submit_button("Unlock OpenSite",type="primary",use_container_width=True)
+        if submitted:
+            if hmac.compare_digest(password,expected):
+                st.session_state["opensite_authenticated"]=True
+                st.rerun()
+            else: st.error("That password was not accepted.")
+    st.stop()
+
+
+require_access_password()
+
+
 def esc(value):
     return html.escape(str(value))
 
@@ -109,6 +130,9 @@ with st.sidebar:
     st.markdown('<div class="divider"></div><div class="eyebrow">Tracked sites</div>', unsafe_allow_html=True)
     site_id = st.selectbox("Property", list(sites_by_id), format_func=lambda key: sites_by_id[key]["domain"], label_visibility="collapsed", key="property_select")
     site = sites_by_id[site_id]
+    if os.getenv("OPENSITE_ACCESS_PASSWORD") and st.button("Lock workspace",use_container_width=True):
+        st.session_state["opensite_authenticated"]=False
+        st.rerun()
     with st.expander("Add your website"):
         with st.form("add_property"):
             new_domain=st.text_input("Domain or URL",placeholder="example.com")
