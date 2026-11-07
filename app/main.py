@@ -115,6 +115,18 @@ def remember_import(site_id, provider, summary, details=None):
     hindsight_mgr.retain(site_id,content,tags=["live_data",provider.lower().replace(" ","_"),"analytics_snapshot"],metadata={"type":"Live data import","provider":provider})
 
 
+def remember_ranking_snapshot(site_id, provider, rows, period=""):
+    """Save a bounded ranking snapshot so later imports can show query movement."""
+    normalized = rows[:1000] if isinstance(rows, list) else []
+    date_label = datetime.now().astimezone().date().isoformat()
+    hindsight_mgr.retain(
+        site_id,
+        f"[RANKING SNAPSHOT] {provider}: {len(normalized)} query/keyword rows imported on {date_label}. Period: {period or 'provider default'}.",
+        tags=["ranking_snapshot", provider.lower().replace(" ", "_")],
+        metadata={"type":"Ranking snapshot", "provider":provider, "period":period, "snapshot_date":date_label, "rows":normalized},
+    )
+
+
 def property_state_key(name, property_id):
     return f"{name}:{property_id}"
 
@@ -272,16 +284,19 @@ elif page == "AI Growth Agent":
         if pending:
             with st.expander("Record a recommendation outcome"):
                 with st.form("recommendation_outcome"):
-                    selected_rec = st.selectbox("Implemented recommendation", pending, format_func=lambda item: item.get("metadata", {}).get("question", item.get("content", ""))[:100])
+                    pending_by_id = {item.get("metadata", {}).get("recommendation_id", ""): item for item in pending}
+                    selected_rec_id = st.selectbox("Implemented recommendation", list(pending_by_id), format_func=lambda rec_id: pending_by_id[rec_id].get("metadata", {}).get("question", pending_by_id[rec_id].get("content", ""))[:100])
                     outcome_detail = st.text_area("What changed and what did you measure?", placeholder="Include implementation date, comparison period, traffic/conversions/rankings, and caveats.")
                     outcome_submit = st.form_submit_button("Save measured outcome")
                     if outcome_submit:
                         if not outcome_detail.strip():
                             st.error("Describe the measured result before saving.")
                         else:
+                            selected_rec = pending_by_id[selected_rec_id]
                             rec_id = selected_rec.get("metadata", {}).get("recommendation_id", "")
                             hindsight_mgr.retain(site_id, f"[RECOMMENDATION OUTCOME] {selected_rec.get('metadata', {}).get('question', 'Growth recommendation')}: {outcome_detail.strip()}", tags=["recommendation_outcome", "growth_learning"], metadata={"type":"Recommendation outcome", "recommendation_id":rec_id, "recommendation_memory_id":selected_rec.get("id", ""), "result":outcome_detail.strip()})
                             st.success("Outcome saved to site memory.")
+                            st.rerun()
 
 elif page == "SEO audit":
     add_page_header("TECHNICAL SEO · SITE HEALTH","Website auditor","Crawl your public website, find on-page technical issues, and retain audit snapshots for comparison over time.")
@@ -355,6 +370,53 @@ elif page == "Content intelligence":
                 remember_import(site_id, "OpenSite Content Intelligence", f"Analyzed structure of {len(pages)} pages", page_df.to_dict("records"))
                 st.success("Content snapshot saved to property memory.")
 
+elif page == "Conversion intelligence":
+    add_page_header("VISITORS · LEADS · CONVERSION", "Conversion intelligence", "Connect analytics outcomes with the experiments and page changes saved in this property's history.")
+    st.write("")
+    conversion_key = property_state_key("ga4_live", site_id)
+    ga_conversion = st.session_state.get(conversion_key)
+    conversion_memories = [item for item in site_memories if item.get("metadata", {}).get("type") == "Conversion snapshot"]
+    if ga_conversion:
+        col_a, col_b, col_c, col_d = st.columns(4)
+        col_a.metric("Sessions · 28d", f"{ga_conversion['sessions']:,}")
+        col_b.metric("Users · 28d", f"{ga_conversion['users']:,}")
+        col_c.metric("Conversion events · 28d", f"{ga_conversion['conversions']:,.0f}")
+        total_sessions = ga_conversion.get("sessions", 0)
+        col_d.metric("Events per session", f"{ga_conversion['conversions'] / total_sessions:.2%}" if total_sessions else "—")
+        daily_rows = [{"Date": row.get("date", ""), "Sessions": int(row.get("sessions", 0)), "Conversions": float(row.get("conversions", 0))} for row in ga_conversion.get("rows", [])]
+        if daily_rows:
+            chart = pd.DataFrame(daily_rows)
+            chart["Date"] = pd.to_datetime(chart["Date"], format="%Y%m%d", errors="coerce")
+            chart = chart.dropna(subset=["Date"]).set_index("Date")
+            if not chart.empty:
+                st.line_chart(chart, height=250)
+        st.caption("GA4 conversion events divided by sessions are an events-per-session ratio; they may not equal a user-level conversion rate.")
+    else:
+        st.info("Connect GA4 in Data connections to load live session and conversion-event history. You can also record a measured conversion snapshot below.")
+    with st.expander("Record a conversion snapshot"):
+        with st.form("conversion_snapshot"):
+            snapshot_date = st.date_input("Measurement date")
+            channel = st.text_input("Channel or landing page", placeholder="Organic search · /pricing")
+            visitors = st.number_input("Visitors or sessions", min_value=0, step=1)
+            conversions = st.number_input("Leads or conversion events", min_value=0, step=1)
+            measurement_period = st.text_input("Comparison period", placeholder="Previous 28 days, or experiment dates")
+            conversion_submit = st.form_submit_button("Save conversion snapshot")
+            if conversion_submit:
+                if visitors <= 0 or conversions > visitors:
+                    st.error("Enter a positive visitor count and conversions no greater than visitors.")
+                else:
+                    conversion_rate = conversions / visitors
+                    payload = {"date":snapshot_date.isoformat(), "channel":channel.strip(), "visitors":int(visitors), "conversions":int(conversions), "conversion_rate":conversion_rate, "period":measurement_period.strip()}
+                    hindsight_mgr.retain(site_id, f"[CONVERSION SNAPSHOT] {channel.strip() or 'Site conversion'} on {snapshot_date.isoformat()}: {conversions} conversions from {visitors} visitors ({conversion_rate:.2%}). Period: {measurement_period.strip() or 'not specified'}.", tags=["conversion", "analytics_snapshot", "user_recorded"], metadata={"type":"Conversion snapshot", **payload})
+                    st.success("Conversion measurement saved to property history.")
+                    st.rerun()
+    if conversion_memories:
+        frame = pd.DataFrame([{"Date":item.get("metadata", {}).get("date", item.get("timestamp", "")[:10]), "Channel / page":item.get("metadata", {}).get("channel", ""), "Visitors":item.get("metadata", {}).get("visitors", 0), "Conversions":item.get("metadata", {}).get("conversions", 0), "Rate":item.get("metadata", {}).get("conversion_rate", 0), "Period":item.get("metadata", {}).get("period", "")} for item in conversion_memories])
+        if not frame.empty:
+            frame["Rate"] = frame["Rate"].map(lambda value:f"{float(value):.2%}")
+            st.markdown('<div class="section-title">Saved conversion history</div>', unsafe_allow_html=True)
+            st.dataframe(frame.sort_values("Date", ascending=False), use_container_width=True, hide_index=True)
+
 elif page == "Competitor analysis":
     add_page_header("COMPETITIVE RESEARCH · PUBLIC PAGES", "Competitor analysis", "Compare public on-page content and technical signals. OpenSite does not infer competitor traffic, rankings, or backlinks from a page crawl.")
     st.write("")
@@ -381,9 +443,51 @@ elif page == "Competitor analysis":
             with st.expander("Public technical findings"):
                 st.dataframe(pd.DataFrame(competitor_audit["findings"]), use_container_width=True, hide_index=True)
 
+elif page == "Local SEO & Maps":
+    add_page_header("LOCAL PRESENCE · BUSINESS LOCATIONS", "Local SEO & Maps", "Keep location, business profile, and regional performance context with the site. This records and maps your own locations; it does not scrape Google Maps rankings.")
+    st.write("")
+    local_memories = [item for item in site_memories if item.get("metadata", {}).get("type") == "Local business location"]
+    with st.expander("Add a business location", expanded=not local_memories):
+        with st.form("local_business_location"):
+            business_name = st.text_input("Business or branch name")
+            business_address = st.text_input("Full public address", placeholder="Street, city, state or region, postal code, country")
+            business_category = st.text_input("Primary category", placeholder="e.g. Dental clinic")
+            business_website = st.text_input("Business website", placeholder="https://example.com/location")
+            business_phone = st.text_input("Public business phone")
+            profile_url = st.text_input("Business profile URL", placeholder="Public Google Business Profile or directory listing")
+            location_submit = st.form_submit_button("Geocode and save location", type="primary")
+            if location_submit:
+                if not business_name.strip() or not business_address.strip():
+                    st.error("Add a business name and public address.")
+                else:
+                    try:
+                        with st.spinner("Looking up this location…"):
+                            location_result = integrations.geocode_location(business_address.strip(), os.getenv("OPENSITE_NOMINATIM_URL", "https://nominatim.openstreetmap.org/search"))
+                        location_data = {"name":business_name.strip(), "address_query":business_address.strip(), "display_name":location_result["display_name"], "latitude":location_result["latitude"], "longitude":location_result["longitude"], "category":business_category.strip(), "website":business_website.strip(), "phone":business_phone.strip(), "profile_url":profile_url.strip(), "osm_type":location_result["osm_type"], "osm_id":location_result["osm_id"], "geocoder":location_result["provider"]}
+                        hindsight_mgr.retain(site_id, f"[LOCAL SEO LOCATION] {location_data['name']}: {location_data['display_name']}. Category: {location_data['category'] or 'not specified'}. Website: {location_data['website'] or 'not specified'}. Phone: {location_data['phone'] or 'not specified'}.", tags=["local_seo", "business_location", "user_recorded"], metadata={"type":"Local business location", **location_data})
+                        st.success("Location geocoded and saved to this property's history.")
+                        st.rerun()
+                    except Exception as exc:
+                        st.error(f"Location lookup failed: {exc}")
+    if local_memories:
+        local_rows = []
+        for item in local_memories:
+            meta = item.get("metadata", {})
+            try:
+                local_rows.append({"Business":meta.get("name", "Business"), "Address":meta.get("display_name", meta.get("address_query", "")), "Category":meta.get("category", ""), "latitude":float(meta["latitude"]), "longitude":float(meta["longitude"]), "Website":meta.get("website", ""), "Phone":meta.get("phone", ""), "Profile":meta.get("profile_url", "")})
+            except (KeyError, TypeError, ValueError):
+                continue
+        if local_rows:
+            local_frame = pd.DataFrame(local_rows)
+            st.map(local_frame[["latitude", "longitude"]].rename(columns={"latitude":"lat", "longitude":"lon"}), zoom=4)
+            st.caption("Map coordinates from OpenStreetMap · © OpenStreetMap contributors · ODbL")
+            st.dataframe(local_frame.drop(columns=["latitude", "longitude"]), use_container_width=True, hide_index=True, column_config={"Website":st.column_config.LinkColumn(), "Profile":st.column_config.LinkColumn()})
+    st.info("Public Nominatim lookup is a user-triggered lookup, cached in-process, with a switchable endpoint. The public service has a strict usage policy and is unsuitable for bulk or high-volume production geocoding.")
+
 elif page == "Keyword rankings":
     add_page_header("SEARCH VISIBILITY · QUERIES","Keyword rankings","Track query clicks, impressions, click-through rate, and average position from Search Console or SerpBear history.")
     st.write("")
+    ranking_key = property_state_key("rank_rows", site_id)
     rank_source=st.radio("Ranking source",["Google Search Console","SerpBear"],horizontal=True)
     if rank_source=="Google Search Console":
         with st.form("gsc_query_rankings"):
@@ -393,8 +497,8 @@ elif page == "Keyword rankings":
         if submitted:
             try:
                 result=integrations.search_console_queries(token,property_name)
-                st.session_state["rank_rows"]=result["rows"]
-                remember_import(site_id,"Google Search Console query rankings",f"{len(result['rows'])} query rows for {result['range']}",result["rows"])
+                st.session_state[ranking_key]=result["rows"]
+                remember_ranking_snapshot(site_id,"Google Search Console",result["rows"],result["range"])
             except Exception as exc: st.error(f"Could not load query rankings: {exc}")
     else:
         with st.form("serpbear_rankings"):
@@ -405,13 +509,50 @@ elif page == "Keyword rankings":
         if submitted:
             try:
                 result=integrations.serp_bear_keywords(host,key,tracked_domain)
-                st.session_state["rank_rows"]=result["keywords"]
-                remember_import(site_id,"SerpBear keyword rankings",f"{len(result['keywords'])} tracked keywords",result["keywords"])
+                st.session_state[ranking_key]=result["keywords"]
+                remember_ranking_snapshot(site_id,"SerpBear",result["keywords"])
             except Exception as exc: st.error(f"Could not load SerpBear rankings: {exc}")
-    rank_rows=st.session_state.get("rank_rows",[])
+    rank_rows=st.session_state.get(ranking_key,[])
     if rank_rows:
         st.dataframe(pd.DataFrame(rank_rows),use_container_width=True,hide_index=True)
         st.download_button("Download ranking data",pd.DataFrame(rank_rows).to_csv(index=False),file_name="opensite-keyword-rankings.csv",mime="text/csv")
+    snapshots = sorted([item for item in site_memories if item.get("metadata", {}).get("type") == "Ranking snapshot"], key=lambda item:item.get("timestamp", ""))
+    history_rows = []
+    for snapshot in snapshots:
+        meta = snapshot.get("metadata", {})
+        for row in meta.get("rows", []):
+            keys = row.get("keys", []) if isinstance(row, dict) else []
+            query = row.get("query") or row.get("keyword") or row.get("term") or (keys[0] if keys else "")
+            position = row.get("position", row.get("average_position", row.get("rank")))
+            if not query or position is None:
+                continue
+            try:
+                history_rows.append({"Date":meta.get("snapshot_date", snapshot.get("timestamp", "")[:10]), "Query":str(query), "Position":float(position), "Provider":meta.get("provider", "")})
+            except (TypeError, ValueError):
+                continue
+    if history_rows:
+        history = pd.DataFrame(history_rows)
+        latest_date = history["Date"].max()
+        latest = history[history["Date"] == latest_date].sort_values("Position").drop_duplicates("Query")
+        previous_dates = sorted(date_value for date_value in history["Date"].unique() if date_value < latest_date)
+        st.markdown('<div class="divider"></div><div class="section-title">Ranking history</div><div class="subtle">Compare imported snapshots by query. Search Console positions are period averages; they are not daily exact rank checks.</div>', unsafe_allow_html=True)
+        if previous_dates:
+            previous = history[history["Date"] == previous_dates[-1]].drop_duplicates("Query", keep="last")
+            comparison = latest.merge(previous[["Query", "Position"]].rename(columns={"Position":"Previous position"}), on="Query", how="left")
+            comparison["Change"] = comparison["Previous position"] - comparison["Position"]
+            comparison = comparison.sort_values("Change", ascending=False, na_position="last")
+            gainer_col, decliner_col = st.columns(2)
+            with gainer_col:
+                st.markdown("#### Improving queries")
+                st.dataframe(comparison[comparison["Change"] > 0].head(10), use_container_width=True, hide_index=True)
+            with decliner_col:
+                st.markdown("#### Declining queries")
+                st.dataframe(comparison[comparison["Change"] < 0].sort_values("Change").head(10), use_container_width=True, hide_index=True)
+        selected_query = st.selectbox("Inspect query over saved snapshots", sorted(history["Query"].unique()))
+        query_history = history[history["Query"] == selected_query].sort_values("Date").drop_duplicates("Date", keep="last")
+        if not query_history.empty:
+            st.line_chart(query_history.set_index("Date")["Position"], height=220)
+            st.dataframe(query_history, use_container_width=True, hide_index=True)
     else:
         st.caption("Rank history requires Search Console or a configured SERP provider such as SerpBear. Search Console reports queries for your own verified properties; it does not provide competitor rankings or search volume.")
 
@@ -507,6 +648,9 @@ elif page == "Data connections":
     add_page_header("CONNECT YOUR STACK","Live data connections","Connect read-only Search Console, analytics, and experiment data. Credentials stay in this browser session and are never written to OpenSite memory.")
     st.write("")
     st.info("Google Search Console and GA4 need a valid Google OAuth access token with the matching read-only scope. Plausible, PostHog, and Umami require their own API keys. These providers do not expose account data without your authorization.")
+    gsc_key = property_state_key("gsc_live", site_id)
+    ga4_key = property_state_key("ga4_live", site_id)
+    plausible_key = property_state_key("plausible_live", site_id)
     top_left,top_right=st.columns(2)
     with top_left:
         with st.form("gsc_connect"):
@@ -517,12 +661,12 @@ elif page == "Data connections":
         if gsc_submit:
             try:
                 result=integrations.search_console_report(gsc_token,gsc_property)
-                st.session_state["gsc_live"]=result
+                st.session_state[gsc_key]=result
                 remember_import(site_id,result["provider"],f"{result['clicks']} clicks, {result['impressions']} impressions, CTR {result['ctr']:.2%}, average position {result['average_position']}",result["rows"])
                 st.success(f"Connected · {result['clicks']:,} clicks · {result['impressions']:,} impressions · average position {result['average_position'] or '—'}")
             except Exception as exc: st.error(f"Search Console connection failed: {exc}")
-        if st.session_state.get("gsc_live"):
-            frame=pd.DataFrame([{"date":row.get("keys",[""])[0],"clicks":row.get("clicks",0),"impressions":row.get("impressions",0)} for row in st.session_state["gsc_live"]["rows"]])
+        if st.session_state.get(gsc_key):
+            frame=pd.DataFrame([{"date":row.get("keys",[""])[0],"clicks":row.get("clicks",0),"impressions":row.get("impressions",0)} for row in st.session_state[gsc_key]["rows"]])
             if not frame.empty:
                 frame["date"]=pd.to_datetime(frame["date"])
                 st.line_chart(frame.set_index("date")[["clicks","impressions"]])
@@ -535,12 +679,12 @@ elif page == "Data connections":
         if ga_submit:
             try:
                 result=integrations.ga4_report(ga_token,ga_property)
-                st.session_state["ga4_live"]=result
+                st.session_state[ga4_key]=result
                 remember_import(site_id,result["provider"],f"{result['sessions']} sessions, {result['users']} users, {result['conversions']} conversions",result["rows"])
                 st.success(f"Connected · {result['sessions']:,} sessions · {result['users']:,} users · {result['conversions']:,.0f} conversions")
             except Exception as exc: st.error(f"GA4 connection failed: {exc}")
-        if st.session_state.get("ga4_live"):
-            st.dataframe(pd.DataFrame(st.session_state["ga4_live"]["rows"]),use_container_width=True,hide_index=True)
+        if st.session_state.get(ga4_key):
+            st.dataframe(pd.DataFrame(st.session_state[ga4_key]["rows"]),use_container_width=True,hide_index=True)
     st.markdown('<div class="divider"></div>',unsafe_allow_html=True)
     a,b,c=st.columns(3)
     with a:
@@ -552,11 +696,11 @@ elif page == "Data connections":
             pl_submit=st.form_submit_button("Fetch Plausible stats")
         if pl_submit:
             try:
-                st.session_state["plausible_live"]=integrations.plausible_report(pl_key,pl_domain,pl_host)
-                remember_import(site_id,"Plausible Analytics","30 day stats fetched",st.session_state["plausible_live"].get("results",[]))
+                st.session_state[plausible_key]=integrations.plausible_report(pl_key,pl_domain,pl_host)
+                remember_import(site_id,"Plausible Analytics","30 day stats fetched",st.session_state[plausible_key].get("results",[]))
                 st.success("Plausible data loaded.")
             except Exception as exc: st.error(f"Plausible connection failed: {exc}")
-        if st.session_state.get("plausible_live"): st.json(st.session_state["plausible_live"].get("results",[]))
+        if st.session_state.get(plausible_key): st.json(st.session_state[plausible_key].get("results",[]))
     with b:
         with st.form("posthog_connect"):
             st.markdown("#### PostHog")

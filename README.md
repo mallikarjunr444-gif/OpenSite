@@ -10,10 +10,15 @@ OpenSite is a growth intelligence workspace for marketing teams. It brings searc
 ## What OpenSite does
 
 - **Growth overview:** review saved site signals and ask the advisor questions grounded in that history.
+- **AI Growth Agent:** retrieve site evidence, ask a question, save an evidence-linked recommendation, and record the measured result after implementation. Optional Ollama provides local synthesis; without a model, the agent returns matching evidence.
 - **Website auditor:** crawl a public site, respect `robots.txt`, and flag missing or duplicate metadata, heading issues, and images without alt text. Audit results become memories.
+- **Content intelligence:** inspect crawled word counts, H1/H2 structure, text samples, and metadata at page level.
+- **Competitor intelligence:** compare a limited crawl of public competitor pages. It does not invent competitor traffic, rank, or backlink data.
 - **Keyword rankings:** import query metrics from Google Search Console or position history from SerpBear.
 - **Analytics connections:** read metrics from GA4, Plausible, PostHog, Umami, and Matomo.
+- **Conversion intelligence:** chart GA4 session/conversion history and record comparable visitor-to-lead snapshots.
 - **Experiments:** record hypotheses and outcomes; import experiment records from GrowthBook.
+- **Local SEO & Maps:** save a business location and public profile details, geocode it on request, and plot saved locations.
 - **Search updates:** view Google Search Central announcements alongside a site's history. Timing indicates context, not cause.
 - **Performance:** run PageSpeed Insights and import Chrome UX Report field metrics.
 - **Historical memory:** search saved audits, analytics snapshots, ranking history, and team-entered experiments.
@@ -56,6 +61,8 @@ All analytics connectors are read-only. OpenSite does not receive private accoun
 
 Credentials entered in the Streamlit UI remain in that browser session and are not written to the memory bank. Google OAuth access tokens expire and must be refreshed. External SERP positions, search-volume estimates, and backlink indexes need a separately configured data provider; open-source software alone cannot supply those datasets.
 
+Local SEO geocoding uses the configurable `OPENSITE_NOMINATIM_URL`. If using the public Nominatim service, every lookup is user-triggered and cached in-process; obey the [Nominatim usage policy](https://operations.osmfoundation.org/policies/nominatim/) (including its maximum of one request per second), provide suitable attribution, and switch to a provider you operate or are authorized to use if your usage grows. OpenStreetMap data is © OpenStreetMap contributors and available under ODbL.
+
 ## Run with `.env`
 
 Copy `.env.example` to `.env` for local options. Do not commit `.env` or provider keys.
@@ -68,9 +75,9 @@ cp .env.example .env
 
 ## Firebase deployment
 
-The Firebase project is `opensite-growth-mr444`; its Hosting site alias `opensite` maps to `opensite-growth-mr444-hosting`. Firebase Hosting currently serves the static project page from `docs/`. The interactive Streamlit app requires Cloud Run.
+The Firebase project is `opensite-growth-mr444`; its Hosting site alias `opensite` maps to `opensite-growth-mr444-hosting`. The responsive project page from `docs/` is live at [opensite-growth-mr444-hosting.web.app](https://opensite-growth-mr444-hosting.web.app). The interactive Streamlit app requires Cloud Run.
 
-The project and Hosting site have been created. Cloud Run requires an active billing account even when staying within its free quota. Once an open billing account is linked to the Firebase project and the Cloud Run, Cloud Build, Artifact Registry, Secret Manager, and Firestore APIs can be enabled:
+The project and Hosting site have been created. Cloud Run requires an active billing account even when staying within its free quota. The following steps apply only after linking an open billing account to the Firebase project and enabling Cloud Run, Cloud Build, Artifact Registry, Secret Manager, and Firestore APIs:
 
 1. Create a Secret Manager secret named `opensite-access-password` containing a strong password, then grant the Cloud Run service account access to that secret.
 2. Configure `OPENSITE_MEMORY_BACKEND=firestore` and grant the service account Firestore access.
@@ -86,11 +93,11 @@ Cloud Run requires an open billing account even though it has a free usage quota
 
 ## GitHub Pages project site
 
-The repository includes a responsive static OpenSite project landing page in `docs/`. GitHub Actions publishes it from `main`, and Firebase Hosting serves the same page. These landing pages are separate from the Streamlit application: they describe OpenSite and link to setup instructions, while interactive dashboards, API connections, and persistent memory need the Python backend deployed on Cloud Run or another server host.
+The responsive static project page is live on [GitHub Pages](https://mallikarjunr444-gif.github.io/OpenSite/) and [Firebase Hosting](https://opensite-growth-mr444-hosting.web.app). GitHub Actions publishes it from `main`; Firebase deployments use `firebase deploy --only hosting:opensite --project opensite-growth-mr444`. These landing pages are separate from the Streamlit application: they describe OpenSite and link to setup instructions, while interactive dashboards, API connections, and persistent memory need the Python backend deployed on Cloud Run or another server host.
 
 ## Current scope
 
-Implemented now: Streamlit workspace, local and Firestore memory backends, optional Hindsight mirroring, user-added sites, technical crawler, crawl-based content analysis, public competitor page comparison, Search Console/SerpBear rankings, analytics and GrowthBook imports, PageSpeed/CrUX, official search update feed, optional Ollama synthesis, and a static GitHub Pages landing page.
+Implemented now: Streamlit workspace; local and Firestore memory backends; optional Hindsight mirroring; user-added sites; technical crawler and crawl-based content analysis; public competitor page comparison; Search Console/SerpBear rankings; read-only analytics and GrowthBook imports; PageSpeed/CrUX; official search update feed; AI recommendation and measured-outcome capture; conversion snapshots; user-entered business locations with geocoding and maps; optional Ollama synthesis; and static GitHub Pages/Firebase landing pages.
 
 Still requiring additional implementation or provider configuration: user accounts and team permissions, a full PostgreSQL/pgvector migration, scheduled sync and alerts, local rank tracking beyond geocoded business locations, automated competitor SERP/backlink research, and direct GrowthBook experiment creation/management. SERP and competitor datasets may require a separately configured provider. Review third-party licenses before redistributing integrated services.
 
@@ -103,7 +110,7 @@ docs/                Static GitHub Pages project site
 .github/workflows/   Pages publishing workflow
 public/              Firebase Hosting assets
 Dockerfile           Cloud Run container
-firebase.json        Firebase Hosting rewrite to Cloud Run
+firebase.json        Firebase Hosting static project page configuration
 .firebaserc          OpenSite Firebase project and Hosting target
 .env.example         Local configuration template
 ```
