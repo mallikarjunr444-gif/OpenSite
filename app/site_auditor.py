@@ -19,15 +19,22 @@ class PageParser(HTMLParser):
         self.canonical = ""
         self.robots = ""
         self.h1 = []
+        self.h2 = []
         self.links = []
         self.images = []
+        self.text_parts = []
+        self._h2 = False
+        self._skip_text_depth = 0
         self._title = False
         self._h1 = False
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
+        if tag in ("script", "style", "noscript", "svg"):
+            self._skip_text_depth += 1
         if tag == "title": self._title = True
         if tag == "h1": self._h1 = True
+        if tag == "h2": self._h2 = True
         if tag == "meta":
             name = (attrs.get("name") or "").lower()
             if name == "description": self.description = attrs.get("content", "").strip()
@@ -37,14 +44,21 @@ class PageParser(HTMLParser):
         if tag == "img": self.images.append(attrs.get("alt", "").strip())
 
     def handle_endtag(self, tag):
+        if tag in ("script", "style", "noscript", "svg") and self._skip_text_depth:
+            self._skip_text_depth -= 1
         if tag == "title": self._title = False
         if tag == "h1": self._h1 = False
+        if tag == "h2": self._h2 = False
 
     def handle_data(self, data):
+        if self._skip_text_depth:
+            return
         text = " ".join(data.split())
         if not text: return
         if self._title: self.title += (" " if self.title else "") + text
         if self._h1: self.h1.append(text)
+        if self._h2: self.h2.append(text)
+        self.text_parts.append(text)
 
 
 def _public_http_url(value):
@@ -104,9 +118,11 @@ def crawl_site(start_url, max_pages=30, delay_seconds=0.15):
                 body = response.read(1_500_000).decode(response.headers.get_content_charset() or "utf-8", errors="replace")
             page = PageParser()
             page.feed(body)
+            body_text = " ".join(page.text_parts)
             item = {"url": final_url, "status": status, "title": page.title.strip(), "title_length": len(page.title.strip()),
                     "description": page.description, "description_length": len(page.description), "canonical": urljoin(final_url, page.canonical) if page.canonical else "",
-                    "robots": page.robots, "h1": page.h1, "images": len(page.images), "images_missing_alt": sum(not alt for alt in page.images),
+                    "robots": page.robots, "h1": page.h1, "h2": page.h2, "images": len(page.images), "images_missing_alt": sum(not alt for alt in page.images),
+                    "word_count": len(body_text.split()), "text_sample": body_text[:1200],
                     "internal_links": 0, "external_links": 0}
             for link in page.links:
                 target = urlparse(urljoin(final_url, link))
