@@ -126,7 +126,7 @@ sites_by_id.update({site["site_id"]:site for site in load_custom_sites()})
 with st.sidebar:
     st.markdown('<div class="brand">OpenSite</div><div class="eyebrow" style="margin:5px 0 25px">SEO & conversion intelligence</div>', unsafe_allow_html=True)
     st.markdown('<div class="eyebrow">Workspace</div>', unsafe_allow_html=True)
-    page = st.radio("Navigation", ["Overview", "SEO audit", "Keyword rankings", "Experiments", "Rankings & updates", "Memory bank", "Data connections"], label_visibility="collapsed")
+    page = st.radio("Navigation", ["Overview", "SEO audit", "Content intelligence", "Competitor analysis", "Keyword rankings", "Experiments", "Rankings & updates", "Memory bank", "Data connections"], label_visibility="collapsed")
     st.markdown('<div class="divider"></div><div class="eyebrow">Tracked sites</div>', unsafe_allow_html=True)
     site_id = st.selectbox("Property", list(sites_by_id), format_func=lambda key: sites_by_id[key]["domain"], label_visibility="collapsed", key="property_select")
     site = sites_by_id[site_id]
@@ -261,6 +261,72 @@ elif page == "SEO audit":
         if audit["errors"]:
             with st.expander(f"Fetch notes ({len(audit['errors'])})"):
                 st.dataframe(pd.DataFrame(audit["errors"]),use_container_width=True,hide_index=True)
+
+elif page == "Content intelligence":
+    add_page_header("CONTENT · COVERAGE · OPPORTUNITY", "Content intelligence", "Review content structure and crawl-level signals to find pages worth improving. This is page analysis, not a substitute for analytics outcomes.")
+    st.write("")
+    content_audit = st.session_state.get("last_audit")
+    if not content_audit:
+        st.info("Run a Website auditor crawl first. OpenSite will reuse that crawl so it does not fetch the same pages twice.")
+        if st.button("Open SEO audit", type="primary"):
+            st.session_state["content_audit_hint"] = True
+    else:
+        pages = content_audit.get("pages", [])
+        if not pages:
+            st.info("The most recent crawl did not return HTML pages.")
+        else:
+            page_df = pd.DataFrame([{
+                "Page": item.get("url", ""), "Words": item.get("word_count", 0),
+                "H1": " · ".join(item.get("h1", [])), "H2 count": len(item.get("h2", [])),
+                "Title": item.get("title", ""), "Images missing alt": item.get("images_missing_alt", 0),
+            } for item in pages])
+            total_words = int(page_df["Words"].sum())
+            a, b, c = st.columns(3)
+            a.metric("Pages analyzed", len(pages))
+            b.metric("Average words per page", f"{total_words / max(len(pages), 1):,.0f}")
+            c.metric("Pages under 300 words", int((page_df["Words"] < 300).sum()))
+            st.dataframe(page_df.sort_values("Words"), use_container_width=True, hide_index=True)
+            selected_url = st.selectbox("Inspect page structure", [item.get("url", "") for item in pages])
+            selected_page = next((item for item in pages if item.get("url") == selected_url), {})
+            col_a, col_b = st.columns(2)
+            with col_a:
+                st.markdown("#### Headings")
+                st.markdown("**H1**")
+                st.write("\n".join(f"- {heading}" for heading in selected_page.get("h1", [])) or "No H1 headings found")
+                st.markdown("**H2**")
+                st.write("\n".join(f"- {heading}" for heading in selected_page.get("h2", [])) or "No H2 headings found")
+            with col_b:
+                st.markdown("#### Extracted text sample")
+                st.caption(selected_page.get("text_sample", "")[:1000] or "No visible text captured")
+            if st.button("Save content crawl snapshot"):
+                remember_import(site_id, "OpenSite Content Intelligence", f"Analyzed structure of {len(pages)} pages", page_df.to_dict("records"))
+                st.success("Content snapshot saved to property memory.")
+
+elif page == "Competitor analysis":
+    add_page_header("COMPETITIVE RESEARCH · PUBLIC PAGES", "Competitor analysis", "Compare public on-page content and technical signals. OpenSite does not infer competitor traffic, rankings, or backlinks from a page crawl.")
+    st.write("")
+    competitor_url = st.text_input("Competitor website", placeholder="https://competitor.example")
+    competitor_limit = st.slider("Pages to inspect", min_value=1, max_value=20, value=5)
+    if st.button("Analyze competitor pages", type="primary"):
+        try:
+            with st.spinner("Crawling public pages and respecting robots.txt…"):
+                result = crawl_site(competitor_url, max_pages=competitor_limit)
+            st.session_state["competitor_audit"] = result
+            remember_import(site_id, "OpenSite Competitor Analysis", f"Inspected {len(result['pages'])} public pages on {result['start_url']}", {"summary": result["summary"], "pages": result["pages"]})
+        except Exception as exc:
+            st.error(f"Competitor crawl could not complete: {exc}")
+    competitor_audit = st.session_state.get("competitor_audit")
+    if competitor_audit:
+        competitor_pages = competitor_audit.get("pages", [])
+        a, b, c = st.columns(3)
+        a.metric("Public pages inspected", len(competitor_pages))
+        b.metric("Avg. word count", f"{sum(p.get('word_count',0) for p in competitor_pages) / max(len(competitor_pages),1):,.0f}")
+        c.metric("Findings", len(competitor_audit.get("findings", [])))
+        if competitor_pages:
+            st.dataframe(pd.DataFrame([{"URL": p["url"], "Title": p["title"], "Words": p.get("word_count",0), "H1": " · ".join(p.get("h1", [])), "H2 count": len(p.get("h2", [])), "Missing alt": p.get("images_missing_alt",0)} for p in competitor_pages]), use_container_width=True, hide_index=True)
+        if competitor_audit.get("findings"):
+            with st.expander("Public technical findings"):
+                st.dataframe(pd.DataFrame(competitor_audit["findings"]), use_container_width=True, hide_index=True)
 
 elif page == "Keyword rankings":
     add_page_header("SEARCH VISIBILITY · QUERIES","Keyword rankings","Track query clicks, impressions, click-through rate, and average position from Search Console or SerpBear history.")
