@@ -3,7 +3,61 @@
 </p>
 
 <h1 align="center">OpenSite</h1>
-<p align="center"><strong>SEO & Conversion Intelligence Agent</strong><br />Understand. Optimize. Grow.</p>
+<p align="center"><strong>Autonomous SEO & Conversion Intelligence Agent</strong><br />AI Agent That Learns Using Hindsight · Vectorize Hackathon Project</p>
+
+---
+
+## 🌐 Live Deployments & Connected Services
+
+| Service | Platform | Live URL / Endpoint | Status |
+| :--- | :--- | :--- | :--- |
+| **Interactive Agent Workspace** | Streamlit Community Cloud | **[opensiteai.streamlit.app](https://opensiteai.streamlit.app/)** | 🟢 Live |
+| **Growth Landing Page** | Firebase Hosting | **[opensite-growth-mr444-hosting.web.app](https://opensite-growth-mr444-hosting.web.app)** | 🟢 Live |
+| **FastAPI REST API & Swagger Docs** | Cloudflare Edge Tunnel | **[bathroom-residents-experience-sacramento.trycloudflare.com/docs](https://bathroom-residents-experience-sacramento.trycloudflare.com/docs)** | 🟢 Live |
+| **Band AI Desktop Tools Manifest** | Cloudflare Edge Tunnel | **[.../api/band-ai/manifest](https://bathroom-residents-experience-sacramento.trycloudflare.com/api/band-ai/manifest)** | 🟢 Live |
+| **Code Repository** | GitHub | **[github.com/mallikarjunr444-gif/OpenSite](https://github.com/mallikarjunr444-gif/OpenSite)** | 🟢 In Sync |
+
+---
+
+## 🔗 End-to-End Connected Architecture
+
+```text
+┌────────────────────────────────────────────────────────────────────────┐
+│                        OPENSITE ARCHITECTURE                           │
+├────────────────────────────────────────────────────────────────────────┤
+│                                                                        │
+│  [1. Public Landing Page]  ──────────────>  [2. Streamlit Workspace]   │
+│   Firebase Hosting                           Streamlit Cloud           │
+│   (Marketing & Overview)                     (Interactive App)         │
+│           │                                         │                  │
+│           │                                         │                  │
+│           ▼                                         ▼                  │
+│  [3. Cloudflare REST API]  <──────────────>  [4. Hindsight Memory]     │
+│   FastAPI Edge Server                        retain · recall · reflect │
+│   (/api/advise, /recall)                     (Persistent Banks)        │
+│           ▲                                         ▲                  │
+│           │                                         │                  │
+│  [5. Band AI Desktop]                        [6. Groq / LLM]           │
+│   (Autonomous Agent Copilot)                  (Sub-second reasoning)   │
+│                                                                        │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+### How the Components Connect Together:
+
+1. **Frontend (Firebase) ➔ Interactive App (Streamlit Cloud):**
+   - The marketing site on Firebase ([`opensite-growth-mr444-hosting.web.app`](https://opensite-growth-mr444-hosting.web.app)) provides an overview of the growth intelligence loop and routes users directly into the live workspace at [`opensiteai.streamlit.app`](https://opensiteai.streamlit.app/).
+2. **Interactive App ➔ Hindsight Memory & Groq Engine:**
+   - Every ranking change, A/B test result, or Google update is stored via `hindsight_mgr.retain()` into isolated site banks (`opensite_io`, `saasmetrics_dev`).
+   - When users ask questions, `hindsight_mgr.recall()` runs multi-strategy **TEMPR** retrieval (semantic vector, BM25 keyword, entity relations, and temporal ranking) and feeds evidence to **Groq LLM** (`qwen/qwen3-32b`) for sub-second, evidence-grounded answers.
+3. **Band AI Desktop ➔ Cloudflare Edge API Bridge:**
+   - Band AI Desktop connects via the manifest endpoint:  
+     `https://bathroom-residents-experience-sacramento.trycloudflare.com/api/band-ai/manifest`
+   - Gives Band AI users 3 native tools: `opensite_advise`, `opensite_recall`, and `opensite_retain`.
+4. **Interactive App ➔ Live Data Integrations:**
+   - Under **Data connections** in the sidebar, users authenticate read-only Google Search Console, GA4, Plausible, PostHog, or Umami connections. OpenSite pulls metrics and permanently retains historical snapshots.
+
+---
 
 OpenSite is a growth intelligence workspace for marketing teams. It brings search visibility, website health, analytics, content performance, and experiment outcomes into one history, then uses that evidence to help decide what to improve next.
 
