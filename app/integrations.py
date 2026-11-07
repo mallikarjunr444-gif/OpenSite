@@ -4,6 +4,7 @@ Credentials are supplied by the user's environment or Streamlit secrets. No
 connector sends writes to analytics/search providers.
 """
 from datetime import date, datetime, timedelta, timezone
+from functools import lru_cache
 from xml.etree import ElementTree
 from typing import Any, Dict, Optional
 from urllib.parse import quote
@@ -131,3 +132,36 @@ def google_search_updates(limit: int = 20) -> Dict[str, Any]:
         entries.append({"title":item.findtext("title",default="").strip(),"url":item.findtext("link",default="").strip(),
                         "published":item.findtext("pubDate",default="").strip(),"summary":item.findtext("description",default="").strip()})
     return {"provider":"Google Search Central","updates":entries}
+
+
+@lru_cache(maxsize=256)
+def geocode_location(query: str, base_url: str = "https://nominatim.openstreetmap.org/search") -> Dict[str, Any]:
+    """Look up one user-requested address; successful responses are cached in-process."""
+    query = " ".join(query.split())
+    if not query or len(query) > 240:
+        raise ValueError("Enter a location up to 240 characters long.")
+    endpoint = base_url.strip()
+    if not endpoint.startswith("https://"):
+        raise ValueError("Use an HTTPS Nominatim endpoint.")
+    response = requests.get(
+        endpoint,
+        params={"q": query, "format": "jsonv2", "limit": 1, "addressdetails": 1},
+        headers={"User-Agent": "OpenSite/1.0 (+https://github.com/mallikarjunr444-gif/OpenSite; user-triggered business location lookup)"},
+        timeout=TIMEOUT,
+    )
+    if not response.ok:
+        raise RuntimeError(f"Geocoder returned HTTP {response.status_code}.")
+    results = response.json()
+    if not results:
+        raise ValueError("No matching location was found. Try a more complete address.")
+    item = results[0]
+    return {
+        "query": query,
+        "display_name": item.get("display_name", query),
+        "latitude": float(item["lat"]),
+        "longitude": float(item["lon"]),
+        "osm_type": item.get("osm_type", ""),
+        "osm_id": str(item.get("osm_id", "")),
+        "address": item.get("address", {}),
+        "provider": endpoint,
+    }
