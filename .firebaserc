@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "opensite-growth-mr444"
+  },
+  "targets": {
+    "opensite-growth-mr444": {
+      "hosting": {
+        "opensite": [
+          "opensite-growth-mr444-hosting"
+        ]
+      }
+    }
+  }
+}

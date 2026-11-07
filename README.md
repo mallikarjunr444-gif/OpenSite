@@ -25,7 +25,7 @@ gcloud run deploy opensite --source . --region us-central1 --allow-unauthenticat
 firebase deploy --only hosting
 ```
 
-The local JSON memory store is not durable on Cloud Run because its container filesystem is ephemeral. Configure Hindsight Cloud or another durable memory backend before relying on deployed memory; do not treat a Cloud Run instance's local file as a backup. Set `OPENSITE_ACCESS_PASSWORD` as a Cloud Run secret for the optional shared-password gate. Configure secrets with Google Secret Manager/Cloud Run environment variables, never commit `.env` or credentials.
+The local JSON memory store is not durable on Cloud Run because its container filesystem is ephemeral. Configure Firestore (`OPENSITE_MEMORY_BACKEND=firestore`) or Hindsight Cloud before relying on deployed memory; do not treat a Cloud Run instance's local file as a backup. Set `OPENSITE_ACCESS_PASSWORD` as a Cloud Run secret for the optional shared-password gate. Configure secrets with Google Secret Manager/Cloud Run environment variables, never commit `.env` or credentials.
 
 ## What it does
 
@@ -43,6 +43,8 @@ The Overview's growth advisor retrieves relevant history first. To enable genera
 This is a runnable local-first product foundation. Live data requires the site's owner to configure provider credentials and property access. Scheduled polling, account authentication, a multi-user PostgreSQL deployment, full local map rendering, automated competitor SERP/backlink analysis, and direct GrowthBook experiment creation/management are not implemented in this version. SERP and competitor datasets generally require a separately configured provider. Search update timing is contextual and should not be treated as proof of cause.
 
 OpenSite keeps local memories in `app/data/memories.json`. They persist across restarts. If the Hindsight SDK and `HINDSIGHT_API_KEY` are configured, OpenSite also mirrors writes and uses remote recall, with local fallback when remote access is unavailable.
+
+For Firebase/Cloud Run, set `OPENSITE_MEMORY_BACKEND=firestore` and grant the Cloud Run service account Firestore access. Memory and imported snapshots then live in the Firestore `opensite_memories` collection rather than the container filesystem. The default local backend remains a JSON file for development.
 
 Add your property from the sidebar before connecting private data. Custom properties are stored in `app/data/sites.json`; their metrics are blank until you import or record real data.
 
